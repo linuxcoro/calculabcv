@@ -1,0 +1,8 @@
+{
+  "appId": "com.linuxcoro.calculabcv",
+  "appName": "CalculaBCV",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

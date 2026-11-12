@@ -19,6 +19,30 @@ También se puede abrir `index.html` directamente, pero conviene usar el
 servidor local para que la consulta de tasas funcione igual en todos los
 navegadores.
 
+## APK de Android
+
+El workflow [`.github/workflows/build-apk.yml`](.github/workflows/build-apk.yml)
+compila la app con **Capacitor 8** y publica un APK debug como artefacto del
+run (no usa GitHub Pages).
+
+1. Entra a **Actions → Build APK** y pulsa **Run workflow**. También se dispara
+   al hacer push a `main` que toque `index.html` o `capacitor.config.json`.
+2. Cuando termine, abre el run y descarga el artefacto **`calculabcv-apk`**.
+3. Descomprime el ZIP e instala `calculabcv-1.0.<versión>.apk` en el móvil
+   (activa «instalar apps de orígenes desconocidos»).
+
+- Paquete: `com.linuxcoro.calculabcv`; nombre visible: **CalculaBCV**
+  (configurados en [`capacitor.config.json`](capacitor.config.json)).
+- El APK necesita internet para la primera carga de tasas; después usa la
+  caché del dispositivo.
+- Se firma con la clave **debug** del runner. Cada build es una firma distinta:
+  para instalar sobre una versión anterior puede hacer falta desinstalar
+  (se pierde la caché). Si quieres firma de producción o adjuntar el APK a un
+  Release, se agrega después.
+- Los commits horarios de `tasas.json` no disparan builds de APK.
+- El APK no contiene PAT ni secretos: solo la app y su copia pública de tasas
+  en tiempo de ejecución.
+
 ## Tasas BCV
 
 La app lee `tasas.json` **publicado en este mismo repositorio**:
@@ -84,7 +108,9 @@ guardas del archivo (sin `eval`, sin PAT, orden del teclado).
 calculabcv/
 ├── .github/
 │   └── workflows/
-│       └── actualizar-tasas.yml # publica tasas.json cada hora
+│       ├── actualizar-tasas.yml # publica tasas.json cada hora
+│       └── build-apk.yml        # compila el APK de Android
+├── capacitor.config.json        # appId, appName y webDir de Capacitor
 ├── index.html                   # app completa (HTML + CSS + JS)
 ├── PLAN.md                      # plan por pasos y criterios de aceptación
 ├── README.md                    # este documento

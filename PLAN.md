@@ -53,10 +53,12 @@ sin CDN ni dependencias) que:
 ```text
 calculabcv/
 ├── .github/workflows/
-│   └── actualizar-tasas.yml   # publica tasas.json cada hora
+│   ├── actualizar-tasas.yml   # publica tasas.json cada hora
+│   └── build-apk.yml          # compila el APK de Android
+├── capacitor.config.json      # appId, appName y webDir de Capacitor
 ├── index.html                 # app completa (HTML + CSS + JS)
 ├── PLAN.md                    # este plan
-├── README.md                  # uso, workflow y pruebas
+├── README.md                  # uso, workflows y pruebas
 ├── tasas.json                 # copia pública (la genera el workflow)
 └── tests/
     └── calculadora.test.mjs   # pruebas con node --test
@@ -98,6 +100,10 @@ calculabcv/
   `actualizarEnVivo()` recalcula resultado y bolívares en cada edición; `=`
   conserva su función. Anuncio accesible con retardo de 500 ms. Verificado en
   Chrome headless (18/18).
+- [x] **Paso 12 · APK de Android.**
+  Workflow `.github/workflows/build-apk.yml` con Capacitor 8 que compila la
+  app y publica `calculabcv-apk` como artefacto del run. Sin PAT ni secretos
+  dentro del APK; los commits de `tasas.json` no disparan builds.
 
 ## 5. Contrato de datos
 
@@ -157,6 +163,11 @@ caché**, contra la copia pública (18/18):
   en verde; `tasas.json` público verificado (USD 904,4485 / EUR 1003,49465523,
   fecha valor 12/11/2026).
 
+Además, el workflow **Build APK** compila con Capacitor 8 y publica el
+artefacto `calculabcv-apk`: run en verde con los pasos de SDK, pruebas,
+Gradle y verificación del APK (app dentro, paquete
+`com.linuxcoro.calculabcv` y permiso `INTERNET`, sin PAT).
+
 La captura revisada (`.preview.png`, solo verificación local) muestra el
 layout final a 390×900 con las tasas reales y sin Ajustes.
 
@@ -178,6 +189,10 @@ layout final a 390×900 con las tasas reales y sin Ajustes.
 - [x] Pruebas automatizadas en verde.
 - [x] Repositorio creado y código publicado:
       <https://github.com/linuxcoro/calculabcv>.
+- [x] Workflow `build-apk.yml` compila el APK debug y publica el artefacto
+      `calculabcv-apk`.
+- [x] APK verificado: app dentro, paquete `com.linuxcoro.calculabcv` y permiso
+      `INTERNET`; sin PAT ni secretos.
 
 ## 9. Seguridad
 
@@ -194,6 +209,7 @@ layout final a 390×900 con las tasas reales y sin Ajustes.
 - [x] Workflow horario publicando `tasas.json` con `secrets.BCV_TASAS_PAT`.
 - [x] Interfaz sin Ajustes, token ni tasas manuales.
 - [x] Valores en dólares/euros y bolívares en vivo mientras se escribe.
+- [x] APK de Android publicado como artefacto por `build-apk.yml`.
 
 ### Workflow
 
