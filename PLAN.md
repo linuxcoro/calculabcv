@@ -35,14 +35,14 @@ sin CDN ni dependencias) que:
   tasa; el resultado cambia de `$` a `€` y la línea de bolívares se recalcula.
 - **Tasa exacta**: la conversión usa el número exacto del JSON
   (`897.5383`, `1001.18602288`), no el valor redondeado que se muestra.
-- **PAT fuera del navegador**: un secreto de GitHub no se puede leer desde una
+- **PAT fuera de la interfaz**: un secreto de GitHub no se puede leer desde una
   página web. El workflow `actualizar-tasas.yml` usa `BCV_TASAS_PAT` para
-  publicar `tasas.json` en este repo; la app lee esa copia pública sin token.
-  El PAT en **Ajustes** (`localStorage`) queda como respaldo opcional, igual
-  que el marcador `<meta name="bcv-tasas-pat" content="__RATES_PAT__">` para
-  despliegues personales.
-- **Cadena de respaldo**: copia pública del repo → API de `bcv_scraper` con
-  PAT → últimas tasas guardadas → tasas manuales de Ajustes.
+  publicar `tasas.json` en este repo; la app solo lee esa copia pública, sin
+  campos de token ni Ajustes.
+- **Sin ajustes en la interfaz**: se quitaron el botón y el diálogo de Ajustes
+  junto con el campo de PAT, las tasas manuales y el borrado de caché.
+- **Cadena de respaldo**: copia pública del repo → últimas tasas guardadas en
+  `localStorage` → aviso con el botón Actualizar.
 - **Cálculo seguro**: parser recursivo propio; nunca `eval` ni `new Function`.
 
 ## 3. Estructura entregada
@@ -53,7 +53,7 @@ calculabcv/
 │   └── actualizar-tasas.yml   # publica tasas.json cada hora
 ├── index.html                 # app completa (HTML + CSS + JS)
 ├── PLAN.md                    # este plan
-├── README.md                  # uso, PAT, seguridad y pruebas
+├── README.md                  # uso, workflow y pruebas
 ├── tasas.json                 # copia pública (la genera el workflow)
 └── tests/
     └── calculadora.test.mjs   # pruebas con node --test
@@ -74,14 +74,11 @@ calculabcv/
   número, `⌫`, `C`, `=` con `blur()` para ocultar el teclado móvil, `Enter`
   y `Escape` en teclado físico, accesibilidad (`aria-live`, etiquetas).
 - [x] **Paso 5 · Módulo de tasas BCV.**
-  API de contenidos con `Accept: application/vnd.github.raw` y
-  `Authorization: Bearer`; URL pública de respaldo; timeout de 10 s; caché en
-  `localStorage`; tasas manuales; mensajes para 401/403/404, sin red y JSON
-  inválido.
-- [x] **Paso 6 · Persistencia y ajustes.**
-  Claves `calculabcv_tasas`, `calculabcv_tasas_manual`, `calculabcv_moneda` y
-  `calculabcv_pat`; diálogo de Ajustes con token, tasas manuales y borrado de
-  la caché.
+  Descarga de la copia pública de `tasas.json` con timeout de 10 s y caché en
+  `localStorage`; mensajes para 404, sin red y JSON inválido.
+- [x] **Paso 6 · Persistencia y moneda.**
+  Claves `calculabcv_tasas` y `calculabcv_moneda`; sin diálogo de ajustes ni
+  credenciales en la interfaz.
 - [x] **Paso 7 · Pruebas y verificación.**
   `node --test tests/calculadora.test.mjs` (7/7) y prueba de interacción en
   Chrome headless (11/11): cálculo, bolívares, foco, cursor, `C`, `⌫`, coma y
@@ -123,9 +120,8 @@ calculabcv/
 
 | Caso | Comportamiento |
 |---|---|
-| Sin PAT y sin datos | Tasas manuales editables; aviso para configurar el acceso. |
-| PAT inválido o sin permiso | Mensaje específico (401/403) y caché o manual. |
-| `tasas.json` 404 / JSON dañado | Error claro; la calculadora sigue funcionando. |
+| Sin copia publicada y sin caché | Aviso; la calculadora muestra `Bs —` hasta que haya tasas. |
+| `tasas.json` 404 / JSON dañado | Error claro; se usa la caché si existe. |
 | Sin internet | Últimas tasas guardadas con aviso. |
 | Expresión incompleta o paréntesis | Error en la línea de resultado, texto intacto. |
 | División entre 0 | «No se puede dividir entre 0». |
@@ -140,20 +136,20 @@ calculabcv/
 node --test tests/calculadora.test.mjs     # 7/7 OK
 ```
 
-Además, prueba real en Chrome headless con clics sobre el teclado:
+Además, prueba real en Chrome headless con clics sobre el teclado, **sin PAT y
+sin caché**, contra la copia pública publicada por el workflow (14/14):
 
-- Con tasas manuales: `3+10−3` → `= $ 10,00` y `En bolívares: Bs 8.975,40`;
-  `=` quita el foco; inserción en cursor; `C`; euro (`Bs 10.011,90`); coma
-  única y `⌫`.
-- **Sin PAT y sin caché**, contra la copia pública ya publicada por el
-  workflow: tasas visibles, estado verde, `3+10-3` → `= $ 10,00` y bolívares
-  con la tasa BCV del día. Workflow run
+- Tasas visibles, estado verde, sin botón Ajustes, sin diálogo y sin campo de
+  token.
+- `3+10−3` → `= $ 10,00` y bolívares con la tasa BCV del día; `=` quita el
+  foco; inserción en cursor; `C`; euro; coma única y `⌫`.
+- Workflow run
   [#43241624437](https://github.com/linuxcoro/calculabcv/actions/runs/43241624437)
   en verde; `tasas.json` público verificado (USD 904,4485 / EUR 1003,49465523,
   fecha valor 12/11/2026).
 
 La captura revisada (`.preview.png`, solo verificación local) muestra el
-layout final a 390×900 con las tasas reales.
+layout final a 390×900 con las tasas reales y sin Ajustes.
 
 ## 8. Criterios de aceptación
 
@@ -164,10 +160,8 @@ layout final a 390×900 con las tasas reales.
       oculta el teclado.
 - [x] Resultado `$/€` y `En bolívares: Bs …` con la tasa BCV de la moneda.
 - [x] Tasas de USD/EUR con fecha valor, actualización y respaldo sin red.
-- [x] Token opcional en Ajustes y soporte del marcador de despliegue; ningún
-      secreto en el archivo (el marcador aparece una sola vez).
-- [x] `tasas.json` público actualizado por el workflow y leído por la app sin
-      PAT.
+- [x] Interfaz sin Ajustes ni campos de token; ningún secreto en el archivo.
+- [x] `tasas.json` público actualizado por el workflow y leído por la app.
 - [x] Pruebas automatizadas en verde.
 - [x] Repositorio creado y código publicado:
       <https://github.com/linuxcoro/calculabcv>.
@@ -176,19 +170,16 @@ layout final a 390×900 con las tasas reales.
 
 - El PAT **no** se escribe en el repositorio ni en el HTML: vive en el secreto
   `BCV_TASAS_PAT` y solo lo usa el workflow.
-- El PAT opcional de Ajustes se guarda en `localStorage` y solo se envía a
-  `api.github.com`.
+- La app no tiene campos de token ni ajustes: solo descarga el JSON público.
 - La copia pública de `tasas.json` contiene solo tasas oficiales del BCV, sin
   datos personales.
-- Si el PAT se inyectara en un sitio público, cualquiera podría leerlo; el
-  marcador `__RATES_PAT__` queda solo para despliegues personales.
 
-## 10. Estado final y PAT
+## 10. Estado final
 
 - [x] Repositorio público: <https://github.com/linuxcoro/calculabcv>.
 - [x] Sin GitHub Pages: la app se abre en local con `python3 -m http.server`.
 - [x] Workflow horario publicando `tasas.json` con `secrets.BCV_TASAS_PAT`.
-- [ ] PAT opcional en Ajustes: no es necesario con la copia pública.
+- [x] Interfaz sin Ajustes, token ni tasas manuales.
 
 ### Workflow
 
@@ -202,15 +193,7 @@ también a mano desde **Actions → Actualizar tasas BCV → Run workflow**:
 Requiere **Settings → Actions → General → Workflow permissions → Read and
 write** (en este repositorio el primer run ya funcionó).
 
-### PAT opcional
-
-Solo hace falta si la copia pública no está disponible:
-
-1. <https://github.com/settings/personal-access-tokens/new>
-2. Resource owner `linuxcoro`; acceso solo a `linuxcoro/bcv_scraper`.
-3. Permiso `Contents: Read-only`.
-4. Pegar en **Ajustes → Token de GitHub (PAT)**.
-
 El secreto `BCV_TASAS_PAT` no se puede leer de vuelta; si el workflow falla con
-401/404, genera un PAT nuevo y actualízalo en **Settings → Secrets and
-variables → Actions**.
+401/404, genera un PAT nuevo con `Contents: Read-only` sobre
+`linuxcoro/bcv_scraper` y actualízalo en **Settings → Secrets and variables →
+Actions**.

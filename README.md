@@ -33,45 +33,27 @@ el secreto `BCV_TASAS_PAT`, y lo commitea solo si cambió. Corre **cada hora**
 (minuto 20) y también a mano desde **Actions → Actualizar tasas BCV → Run
 workflow**.
 
-Así la app **no necesita ningún PAT en el navegador**: el token vive en el
-secreto de GitHub y solo lo usa el workflow. La copia es pública porque el
-repositorio es público (las tasas del BCV son datos oficiales).
-
 ### Requisito del workflow
 
 En **Settings → Actions → General → Workflow permissions** debe estar
 habilitado **Read and write permissions**, para que el workflow pueda commitear
 `tasas.json`. El workflow ya declara `permissions: contents: write`.
 
-### PAT opcional en la app
-
-Si la copia pública todavía no existe (por ejemplo antes del primer run del
-workflow), la app intenta la API de contenidos de `bcv_scraper` con el PAT de
-**Ajustes** y, si no hay, usa la caché o las tasas manuales.
-
-Para configurarlo: engranaje **Ajustes** → pega un PAT *fine-grained* con
-**Contents: Read-only** sobre `linuxcoro/bcv_scraper` → **Guardar**. Se guarda
-solo en el `localStorage` de ese navegador. El secreto de GitHub no se puede
-leer de vuelta; si no tienes el valor, genera uno nuevo en
-<https://github.com/settings/personal-access-tokens/new>.
+La app **no tiene Ajustes ni campos de token**: solo lee la copia pública. Si
+esa copia no está disponible, usa las últimas tasas guardadas en el navegador.
 
 Cadena de respaldo:
 
-**copia pública en este repo → API de `bcv_scraper` con PAT → últimas tasas
-guardadas → tasas manuales de Ajustes.**
-
-El Ajustes también permite borrar las tasas guardadas.
+**copia pública del repo → últimas tasas guardadas en `localStorage` → aviso
+con el botón Actualizar.**
 
 ## Seguridad
 
-- La app no contiene ningún PAT y el repositorio tampoco: el token vive en el
+- La app no contiene ningún PAT ni campos para pegarlo; el token vive en el
   secreto `BCV_TASAS_PAT` y solo lo usa GitHub Actions.
-- El PAT opcional de Ajustes se guarda en `localStorage`, nunca se registra en
-  consola ni se envía a otro sitio que no sea `api.github.com`.
-- La copia publicada de `tasas.json` es pública porque contiene solo las tasas
-  oficiales del BCV; no incluye datos personales.
-- El marcador `__RATES_PAT__` sigue disponible para inyección en despliegues
-  personales, pero no es necesario para el uso normal.
+- La copia publicada de `tasas.json` contiene solo las tasas oficiales del BCV;
+  no incluye datos personales.
+- La app no envía datos del usuario a ningún servidor: solo descarga el JSON.
 
 ## Uso
 

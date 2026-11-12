@@ -6,8 +6,6 @@
 <meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#070e1b" media="(prefers-color-scheme: dark)">
 <meta name="description" content="Calculadora de Pago Móvil con tasas oficiales del BCV (dólar y euro) y conversión a bolívares.">
-<!-- Token inyectable en el despliegue; nunca se guarda en el repositorio. -->
-<meta name="bcv-tasas-pat" content="__RATES_PAT__">
 <title>Calculadora de Pago Móvil · Tasas BCV</title>
 <style>
 * { box-sizing: border-box; }
@@ -131,24 +129,6 @@ h1 {
     font-size: .78rem;
     color: var(--muted);
 }
-
-.icon-btn {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--card);
-    color: var(--text);
-    font-size: 1.15rem;
-    cursor: pointer;
-    transition: transform .12s ease, border-color .12s ease;
-}
-.icon-btn:hover { border-color: var(--accent-2); }
-.icon-btn:active { transform: scale(.96); }
-.icon-btn:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
 
 /* ---------- Paneles ---------- */
 .panel {
@@ -421,118 +401,6 @@ h2 {
     color: var(--muted);
 }
 
-/* ---------- Diálogo de ajustes ---------- */
-.dialog {
-    width: min(440px, calc(100vw - 28px));
-    padding: 0;
-    border: none;
-    border-radius: 20px;
-    background: var(--card);
-    color: var(--text);
-    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .7);
-}
-.dialog::backdrop {
-    background: rgba(3, 10, 24, .62);
-    backdrop-filter: blur(2px);
-}
-
-.dialog-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 16px 18px 6px;
-}
-.dialog-head h2 { font-size: 1rem; }
-.dialog-head .icon-btn { width: 36px; height: 36px; font-size: 1.3rem; }
-
-.dialog-body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 8px 18px 4px;
-}
-
-.field { display: flex; flex-direction: column; gap: 6px; }
-
-.field label {
-    font-size: .73rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
-.field input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 11px;
-    background: var(--card-2);
-    color: var(--text);
-    font: inherit;
-    font-size: .92rem;
-    outline: none;
-}
-.field input:focus {
-    border-color: var(--accent-2);
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, .22);
-}
-
-.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-.dialog-body .hint code {
-    padding: 1px 4px;
-    border-radius: 4px;
-    background: var(--card-2);
-    font-family: var(--mono);
-    font-size: .72rem;
-}
-
-.dialog-error {
-    margin: 0;
-    min-height: 1em;
-    color: var(--danger);
-    font-size: .76rem;
-    font-weight: 600;
-}
-
-.dialog-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 14px 18px calc(16px + env(safe-area-inset-bottom));
-}
-
-.btn-primary {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 11px;
-    background: var(--accent);
-    color: #fff;
-    font: inherit;
-    font-size: .86rem;
-    font-weight: 700;
-    cursor: pointer;
-}
-.btn-primary:hover { filter: brightness(1.06); }
-.btn-primary:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
-
-.btn-ghost {
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 11px;
-    background: transparent;
-    color: var(--muted);
-    font: inherit;
-    font-size: .78rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-.btn-ghost:hover { color: var(--danger); border-color: var(--danger); }
-.btn-ghost:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
-
 .sr-only {
     position: absolute;
     width: 1px;
@@ -563,13 +431,6 @@ h2 {
                 <p>Tasas oficiales BCV · $ y €</p>
             </div>
         </div>
-        <button type="button" class="icon-btn" id="btnAjustes" aria-label="Abrir ajustes" title="Ajustes">
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="M4 7h9M18 7h2M4 17h2M11 17h9"/>
-                <circle cx="15.5" cy="7" r="2.2"/>
-                <circle cx="8.5" cy="17" r="2.2"/>
-            </svg>
-        </button>
     </header>
 
     <section class="panel" aria-labelledby="tituloTasas">
@@ -666,48 +527,6 @@ h2 {
         Conversión calculada con la tasa exacta publicada por el BCV.
     </footer>
 </main>
-
-<dialog class="dialog" id="dlgAjustes" aria-labelledby="tituloAjustes">
-    <form id="formAjustes" novalidate>
-        <header class="dialog-head">
-            <h2 id="tituloAjustes">Ajustes</h2>
-            <button type="button" class="icon-btn" id="btnCerrarAjustes" aria-label="Cerrar ajustes">×</button>
-        </header>
-
-        <div class="dialog-body">
-            <div class="field">
-                <label for="campoToken">Token de GitHub (PAT) · opcional</label>
-                <input id="campoToken" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
-                <p class="hint">
-                    Solo se usa si la copia pública de <code>tasas.json</code> no está
-                    disponible. Se guarda en este navegador. Debe ser un PAT
-                    <em>fine-grained</em> con permiso <em>Contents: Read-only</em> sobre
-                    <code>linuxcoro/bcv_scraper</code>.
-                </p>
-                <p class="hint" id="estadoToken"></p>
-            </div>
-
-            <div class="field-row">
-                <div class="field">
-                    <label for="campoUsd">Tasa manual Bs/$</label>
-                    <input id="campoUsd" type="text" inputmode="decimal" autocomplete="off" placeholder="897,54">
-                </div>
-                <div class="field">
-                    <label for="campoEur">Tasa manual Bs/€</label>
-                    <input id="campoEur" type="text" inputmode="decimal" autocomplete="off" placeholder="1.001,19">
-                </div>
-            </div>
-            <p class="hint">Las tasas manuales solo se usan si no hay tasas del BCV disponibles.</p>
-
-            <p class="dialog-error" id="errorAjustes" role="alert"></p>
-        </div>
-
-        <footer class="dialog-foot">
-            <button type="button" class="btn-ghost" id="btnBorrarCache">Borrar tasas guardadas</button>
-            <button type="submit" class="btn-primary" id="btnGuardarAjustes">Guardar</button>
-        </footer>
-    </form>
-</dialog>
 
 <noscript>
     <p style="text-align:center">Esta calculadora necesita JavaScript activado.</p>
@@ -812,12 +631,6 @@ h2 {
         if (valorTasa === null) return null;
         var total = monto * valorTasa;
         return Number.isFinite(total) ? total : null;
-    }
-
-    function esTokenConfigurado(token) {
-        if (typeof token !== 'string') return false;
-        var limpio = token.trim();
-        return limpio.length > 20 && limpio.slice(0, 2) !== '__';
     }
 
     function tokenizar(texto) {
@@ -954,8 +767,7 @@ h2 {
         formatearExacta: formatearExacta,
         normalizarTasas: normalizarTasas,
         convertirABs: convertirABs,
-        numeroPositivo: numeroPositivo,
-        esTokenConfigurado: esTokenConfigurado
+        numeroPositivo: numeroPositivo
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -968,22 +780,16 @@ h2 {
 
     var STORAGE = {
         tasas: 'calculabcv_tasas',
-        manual: 'calculabcv_tasas_manual',
-        moneda: 'calculabcv_moneda',
-        pat: 'calculabcv_pat'
+        moneda: 'calculabcv_moneda'
     };
 
-    var RATES_URL = 'https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main';
-    var RATES_RAW_URL = 'https://raw.githubusercontent.com/linuxcoro/bcv_scraper/main/tasas.json';
-    // Copia pública que publica el workflow de este repositorio. Se intenta
-    // primero: si existe, la app no necesita ningún PAT en el navegador.
-    var RATES_PUBLIC_URL = 'https://raw.githubusercontent.com/linuxcoro/calculabcv/main/tasas.json';
+    // Copia pública del repositorio, actualizada por el workflow cada hora.
+    var RATES_URL = 'https://raw.githubusercontent.com/linuxcoro/calculabcv/main/tasas.json';
     var TIMEOUT_MS = 10000;
 
     var estado = {
         tasas: null,
         origen: null,
-        manual: { usd: null, eur: null },
         moneda: 'usd',
         ultimoValor: null,
         caret: 0,
@@ -1002,39 +808,8 @@ h2 {
         try { localStorage.setItem(clave, valor); } catch (error) { /* sin almacenamiento */ }
     }
 
-    function borrar(clave) {
-        try { localStorage.removeItem(clave); } catch (error) { /* sin almacenamiento */ }
-    }
-
     function monedaValida(valor) {
         return valor === 'eur' ? 'eur' : 'usd';
-    }
-
-    function leerMetaToken() {
-        var meta = document.querySelector('meta[name="bcv-tasas-pat"]');
-        return meta ? (meta.getAttribute('content') || '') : '';
-    }
-
-    function obtenerToken() {
-        var guardado = leer(STORAGE.pat);
-        if (Core.esTokenConfigurado(guardado)) return guardado.trim();
-        var inyectado = leerMetaToken();
-        if (Core.esTokenConfigurado(inyectado)) return inyectado.trim();
-        return '';
-    }
-
-    function leerManual() {
-        var crudo = leer(STORAGE.manual);
-        if (!crudo) return { usd: null, eur: null };
-        try {
-            var datos = JSON.parse(crudo);
-            return {
-                usd: Core.numeroPositivo(datos && datos.usd),
-                eur: Core.numeroPositivo(datos && datos.eur)
-            };
-        } catch (error) {
-            return { usd: null, eur: null };
-        }
     }
 
     function leerCache() {
@@ -1058,35 +833,23 @@ h2 {
         guardar(STORAGE.tasas, JSON.stringify(copia));
     }
 
-    function mensajeHttp(status, conToken) {
-        if (status === 401) return 'El token de GitHub no es válido o venció.';
-        if (status === 403) return 'El token no tiene permiso de lectura (Contents: Read-only).';
-        if (status === 404) {
-            return conToken
-                ? 'No se encontró tasas.json en el repositorio.'
-                : 'El repositorio de tasas no es público; activa el acceso con tu PAT en Ajustes.';
-        }
+    function mensajeHttp(status) {
+        if (status === 404) return 'Todavía no hay tasas publicadas en el repositorio.';
         if (status === 429) return 'Demasiadas consultas a GitHub. Espera un momento.';
         return 'GitHub respondió con un error (' + status + ').';
     }
 
-    async function pedirTasas(url, token) {
-        var headers = { 'Accept': 'application/vnd.github.raw' };
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-
+    async function descargarTasas() {
         var control = new AbortController();
         var temporizador = setTimeout(function () { control.abort(); }, TIMEOUT_MS);
 
         try {
-            var respuesta = await fetch(url, {
-                headers: headers,
+            var respuesta = await fetch(RATES_URL, {
                 cache: 'no-store',
                 credentials: 'omit',
                 signal: control.signal
             });
-            if (!respuesta.ok) {
-                throw new Error(mensajeHttp(respuesta.status, Boolean(token)));
-            }
+            if (!respuesta.ok) throw new Error(mensajeHttp(respuesta.status));
             var datos = await respuesta.json();
             var tasas = Core.normalizarTasas(datos);
             if (!tasas) throw new Error('El archivo de tasas no tiene datos válidos de USD/EUR.');
@@ -1107,55 +870,23 @@ h2 {
         }
     }
 
-    async function descargarTasas() {
-        // 1) Copia pública del propio repositorio (la publica el workflow).
-        try {
-            var publicas = await pedirTasas(RATES_PUBLIC_URL, null);
-            return { tasas: publicas, fuente: 'publico' };
-        } catch (error) {
-            // Todavía no hay copia publicada: se intenta la fuente privada.
-        }
-
-        var token = obtenerToken();
-
-        // 2) API de contenidos del repo privado con el PAT de Ajustes.
-        if (token) {
-            var privadas = await pedirTasas(RATES_URL, token);
-            return { tasas: privadas, fuente: 'pat' };
-        }
-
-        // 3) Último intento: raw del repo de tasas (solo si se hizo público).
-        try {
-            var respaldo = await pedirTasas(RATES_RAW_URL, null);
-            return { tasas: respaldo, fuente: 'raw' };
-        } catch (error) {
-            throw new Error('No hay tasas publicadas todavía. Ejecuta el workflow «Actualizar tasas BCV» o configura el PAT en Ajustes.');
-        }
-    }
-
     function setEstado(texto, tipo) {
         el.estadoTasas.textContent = texto || '';
         el.estadoTasas.className = 'status' + (tipo ? ' ' + tipo : '');
     }
 
     function tasaDe(moneda) {
-        var tipo = monedaValida(moneda);
-        var tasa = null;
-        if (estado.tasas) tasa = Core.numeroPositivo(estado.tasas[tipo]);
-        if (tasa === null) tasa = Core.numeroPositivo(estado.manual[tipo]);
-        return tasa;
+        if (!estado.tasas) return null;
+        return Core.numeroPositivo(estado.tasas[monedaValida(moneda)]);
     }
 
     function valorTasaVisible(moneda) {
+        if (!estado.tasas) return '—';
         var tipo = monedaValida(moneda);
-        if (estado.tasas) {
-            var texto = estado.tasas[tipo + '_bs'];
-            if (typeof texto === 'string' && texto.trim() !== '') return texto;
-            var numero = Core.numeroPositivo(estado.tasas[tipo]);
-            return numero === null ? '—' : Core.formatearMonto(numero);
-        }
-        var manual = Core.numeroPositivo(estado.manual[tipo]);
-        return manual === null ? '—' : Core.formatearMonto(manual);
+        var texto = estado.tasas[tipo + '_bs'];
+        if (typeof texto === 'string' && texto.trim() !== '') return texto;
+        var numero = Core.numeroPositivo(estado.tasas[tipo]);
+        return numero === null ? '—' : Core.formatearMonto(numero);
     }
 
     function pintarTasas() {
@@ -1169,10 +900,10 @@ h2 {
             el.tasaUsd.title = 'Tasa exacta: Bs ' + (estado.tasas.usd_exacta || Core.formatearExacta(estado.tasas.usd));
             el.tasaEur.title = 'Tasa exacta: Bs ' + (estado.tasas.eur_exacta || Core.formatearExacta(estado.tasas.eur));
         } else {
-            el.fechaUsd.textContent = Core.numeroPositivo(estado.manual.usd) === null ? 'Sin datos' : 'Tasa manual';
-            el.fechaEur.textContent = Core.numeroPositivo(estado.manual.eur) === null ? 'Sin datos' : 'Tasa manual';
-            el.tasaUsd.title = 'Tasa manual';
-            el.tasaEur.title = 'Tasa manual';
+            el.fechaUsd.textContent = 'Sin datos';
+            el.fechaEur.textContent = 'Sin datos';
+            el.tasaUsd.title = '';
+            el.tasaEur.title = '';
         }
 
         pintarResultado();
@@ -1198,17 +929,16 @@ h2 {
         if (total === null) {
             el.resultadoBs.textContent = 'En bolívares: Bs —';
             el.resultadoBs.classList.add('sin-tasa');
-            el.resultadoTasa.textContent = 'Configura la tasa BCV en Ajustes';
+            el.resultadoTasa.textContent = 'Sin tasa BCV disponible';
             return;
         }
 
         el.resultadoBs.classList.remove('sin-tasa');
         el.resultadoBs.textContent = 'En bolívares: Bs ' + Core.formatearMonto(total);
-        var etiqueta = estado.tasas ? 'Tasa BCV' : 'Tasa manual';
         var fecha = estado.tasas && estado.tasas.fecha_valor_texto
             ? ' · ' + estado.tasas.fecha_valor_texto
             : '';
-        el.resultadoTasa.textContent = etiqueta + ' ' + simbolo + ' ' + Core.formatearMonto(tasa) + fecha;
+        el.resultadoTasa.textContent = 'Tasa BCV ' + simbolo + ' ' + Core.formatearMonto(tasa) + fecha;
     }
 
     function mostrarError(mensaje) {
@@ -1324,8 +1054,7 @@ h2 {
         el.txtActualizar.textContent = 'Actualizando…';
         setEstado('Consultando las tasas del BCV…', 'info');
 
-        descargarTasas().then(function (resultado) {
-            var tasas = resultado.tasas;
+        descargarTasas().then(function (tasas) {
             estado.tasas = tasas;
             estado.origen = 'remoto';
             guardarCache(tasas);
@@ -1338,16 +1067,11 @@ h2 {
                 estado.origen = 'guardadas';
                 pintarTasas();
                 setEstado((error.message || 'No se pudieron cargar las tasas.') + ' Se muestran las últimas tasas guardadas.', 'warn');
-            } else if (estado.manual.usd || estado.manual.eur) {
-                estado.tasas = null;
-                estado.origen = 'manual';
-                pintarTasas();
-                setEstado((error.message || 'No se pudieron cargar las tasas.') + ' Usando tasa manual.', 'warn');
             } else {
                 estado.tasas = null;
                 estado.origen = null;
                 pintarTasas();
-                setEstado((error.message || 'No se pudieron cargar las tasas.') + ' Abre Ajustes para configurar el acceso o escribe una tasa manual.', 'error');
+                setEstado(error.message || 'No se pudieron cargar las tasas.', 'error');
             }
         }).finally(function () {
             estado.cargando = false;
@@ -1355,67 +1079,6 @@ h2 {
             el.btnActualizar.removeAttribute('aria-busy');
             el.txtActualizar.textContent = 'Actualizar';
         });
-    }
-
-    function abrirAjustes() {
-        var token = leer(STORAGE.pat) || '';
-        var inyectado = leerMetaToken();
-        el.campoToken.value = token;
-        el.estadoToken.textContent = token
-            ? 'Token guardado en este navegador.'
-            : (Core.esTokenConfigurado(inyectado) ? 'Token inyectado en esta página.' : 'Sin token configurado (se usará la copia pública).');
-        el.campoUsd.value = Core.numeroPositivo(estado.manual.usd) === null ? '' : Core.formatearMonto(estado.manual.usd);
-        el.campoEur.value = Core.numeroPositivo(estado.manual.eur) === null ? '' : Core.formatearMonto(estado.manual.eur);
-        el.errorAjustes.textContent = '';
-        if (typeof el.dlg.showModal === 'function') {
-            el.dlg.showModal();
-        } else {
-            el.dlg.setAttribute('open', '');
-        }
-    }
-
-    function guardarAjustes() {
-        var token = el.campoToken.value.trim();
-        if (token && !Core.esTokenConfigurado(token)) {
-            el.errorAjustes.textContent = 'El token parece incompleto (debe ser un PAT de GitHub).';
-            return;
-        }
-
-        var textoUsd = el.campoUsd.value.trim();
-        var textoEur = el.campoEur.value.trim();
-        var usd = textoUsd ? Core.numeroPositivo(textoUsd) : null;
-        var eur = textoEur ? Core.numeroPositivo(textoEur) : null;
-
-        if (textoUsd && usd === null) {
-            el.errorAjustes.textContent = 'La tasa manual del dólar no es válida.';
-            return;
-        }
-        if (textoEur && eur === null) {
-            el.errorAjustes.textContent = 'La tasa manual del euro no es válida.';
-            return;
-        }
-
-        if (token) guardar(STORAGE.pat, token);
-        else borrar(STORAGE.pat);
-
-        estado.manual = { usd: usd, eur: eur };
-        if (usd || eur) guardar(STORAGE.manual, JSON.stringify(estado.manual));
-        else borrar(STORAGE.manual);
-
-        el.dlg.close();
-        pintarTasas();
-        setEstado('Ajustes guardados. Consultando tasas…', 'info');
-        actualizarTasas();
-    }
-
-    function borrarTasasGuardadas() {
-        borrar(STORAGE.tasas);
-        if (estado.origen === 'guardadas') {
-            estado.tasas = null;
-            estado.origen = null;
-        }
-        pintarTasas();
-        setEstado('Se borraron las tasas guardadas en este navegador.', 'info');
     }
 
     function enlazarTeclado() {
@@ -1452,16 +1115,6 @@ h2 {
         });
 
         el.btnActualizar.addEventListener('click', actualizarTasas);
-        el.btnAjustes.addEventListener('click', abrirAjustes);
-        el.btnCerrarAjustes.addEventListener('click', function () { el.dlg.close(); });
-        el.btnBorrarCache.addEventListener('click', borrarTasasGuardadas);
-        el.form.addEventListener('submit', function (evento) {
-            evento.preventDefault();
-            guardarAjustes();
-        });
-        el.dlg.addEventListener('click', function (evento) {
-            if (evento.target === el.dlg) el.dlg.close();
-        });
     }
 
     function init() {
@@ -1476,21 +1129,10 @@ h2 {
             expresion: $('expresion'),
             resultado: $('resultado'),
             resultadoBs: $('resultadoBs'),
-            resultadoTasa: $('resultadoTasa'),
-            btnAjustes: $('btnAjustes'),
-            dlg: $('dlgAjustes'),
-            form: $('formAjustes'),
-            campoToken: $('campoToken'),
-            estadoToken: $('estadoToken'),
-            campoUsd: $('campoUsd'),
-            campoEur: $('campoEur'),
-            errorAjustes: $('errorAjustes'),
-            btnBorrarCache: $('btnBorrarCache'),
-            btnCerrarAjustes: $('btnCerrarAjustes')
+            resultadoTasa: $('resultadoTasa')
         };
 
         estado.moneda = monedaValida(leer(STORAGE.moneda));
-        estado.manual = leerManual();
         estado.caret = el.expresion.value.length;
 
         var cache = leerCache();

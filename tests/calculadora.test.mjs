@@ -111,24 +111,21 @@ test('conversión a bolívares', () => {
     assert.equal(Core.convertirABs(NaN, 897), null);
 });
 
-test('lectura de números y tokens', () => {
+test('lectura de números', () => {
     assert.equal(Core.numeroPositivo('897,54'), 897.54);
     assert.equal(Core.numeroPositivo('1.001,19'), 1001.19);
     assert.equal(Core.numeroPositivo('897.5383'), 897.5383);
     assert.equal(Core.numeroPositivo(0), null);
     assert.equal(Core.numeroPositivo('texto'), null);
-
-    assert.equal(Core.esTokenConfigurado('__RATES_PAT__'), false);
-    assert.equal(Core.esTokenConfigurado(''), false);
-    assert.equal(Core.esTokenConfigurado('github_pat_' + 'a'.repeat(30)), true);
 });
 
 test('guardas del archivo publicado', () => {
-    assert.equal((html.match(/__RATES_PAT__/g) || []).length, 1, 'El marcador debe aparecer una sola vez');
+    assert.ok(!html.includes('__RATES_PAT__'), 'No debe quedar el marcador del PAT');
+    assert.ok(!html.includes('Ajustes'), 'No debe quedar la interfaz de Ajustes');
+    assert.ok(!/Token de GitHub|PAT/.test(html), 'No debe quedar ninguna referencia al PAT en la interfaz');
     assert.ok(!/new\s+Function/.test(html), 'No debe usarse new Function');
     assert.ok(!/(^|[^a-zA-Z0-9_])eval\s*\(/.test(html), 'No debe usarse eval');
     assert.ok(!/github_pat_[A-Za-z0-9_]{20,}/.test(html), 'No debe haber un PAT escrito en el archivo');
-    assert.ok(html.includes('https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main'));
     assert.ok(html.includes('https://raw.githubusercontent.com/linuxcoro/calculabcv/main/tasas.json'));
 
     const claves = [...html.matchAll(/data-key="([^"]+)"/g)].map((coincidencia) => coincidencia[1]);
