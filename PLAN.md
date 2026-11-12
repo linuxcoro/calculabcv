@@ -164,8 +164,9 @@ caché**, contra la copia pública (18/18):
   fecha valor 12/11/2026).
 
 Además, el workflow **Build APK** compila con Capacitor 8 y publica el
-artefacto `calculabcv-apk`: run en verde con los pasos de SDK, pruebas,
-Gradle y verificación del APK (app dentro, paquete
+artefacto `calculabcv-apk`: run
+[#43249663725](https://github.com/linuxcoro/calculabcv/actions/runs/43249663725)
+en verde (14/14 pasos), APK de 3,7 MB verificado (app dentro, paquete
 `com.linuxcoro.calculabcv` y permiso `INTERNET`, sin PAT).
 
 La captura revisada (`.preview.png`, solo verificación local) muestra el
