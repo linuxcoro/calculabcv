@@ -84,10 +84,20 @@ jobs:
 
       - name: Build debug APK
         run: |
-          set -euo pipefail
+          set -uo pipefail
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
+          estado=${PIPESTATUS[0]}
+          if [ "$estado" -ne 0 ]; then
+            echo "::error::Gradle falló con código ${estado}"
+            grep -E "FAILURE:|What went wrong|Caused by:|error:|Could not|Execution failed|No such file|Permission denied" /tmp/gradle.log \
+              | tail -n 8 \
+              | while IFS= read -r linea; do
+                  echo "::error::${linea}"
+                done
+            exit "$estado"
+          fi
 
       - name: Verificar APK
         run: |
