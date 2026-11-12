@@ -4,6 +4,9 @@ Aplicación de **una sola página** (`index.html`, sin dependencias ni CDN) que
 muestra las tasas oficiales del **BCV** para el **dólar (USD)** y el **euro
 (EUR)** y calcula operaciones con conversión a bolívares.
 
+Repositorio: <https://github.com/linuxcoro/calculabcv> · **sin GitHub Pages**;
+la app se ejecuta en tu equipo con el servidor local.
+
 ## Abrir la app
 
 ```bash
@@ -25,17 +28,31 @@ de contenidos de GitHub:
 https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main
 ```
 
-Como el repositorio es **privado**, hace falta un PAT *fine-grained* con
-permiso **Contents: Read-only** sobre ese repositorio (el secreto
-`BCV_TASAS_PAT`). La web **no puede leer secretos de GitHub**, así que el token
-entra por una de estas dos vías:
+Como `linuxcoro/bcv_scraper` es **privado**, hace falta un PAT *fine-grained*
+con permiso **Contents: Read-only** sobre ese repositorio (el secreto
+`BCV_TASAS_PAT`). Una página web **no puede leer secretos de GitHub**, así que
+el token se pega una vez en **Ajustes** y queda guardado solo en el
+`localStorage` de ese navegador. Nunca se sube al repositorio.
 
-1. **Ajustes de la app** (recomendado): pega el PAT una vez; queda guardado
-   solo en el `localStorage` de ese navegador. Nunca se sube al repositorio.
-2. **Marcador `__RATES_PAT__`** del `<meta name="bcv-tasas-pat">`: se
-   reemplaza al desplegar (por ejemplo desde GitHub Actions con
-   `secrets.BCV_TASAS_PAT`). Ojo: el token quedaría visible en el HTML
-   publicado; úsalo solo en despliegues personales.
+### Crear el PAT (pasos)
+
+1. Abre <https://github.com/settings/personal-access-tokens/new>.
+2. **Resource owner**: `linuxcoro`.
+3. **Repository access** → *Only select repositories* → `linuxcoro/bcv_scraper`.
+4. **Repository permissions → Contents: Read-only** (Metadata queda en lectura
+   automática; no hace falta nada más).
+5. **Generate token** y copia el valor `github_pat_…` (solo se muestra una vez).
+6. Abre la app con el servidor local, toca el engranaje **Ajustes**, pega el
+   token en *Token de GitHub (PAT)* y pulsa **Guardar**. El estado debe quedar
+   en verde: «Tasas BCV cargadas».
+
+> El secreto `BCV_TASAS_PAT` del repositorio **no se puede leer de vuelta**
+> desde GitHub: hay que usar el valor guardado al crearlo o generar un PAT
+> nuevo con estos pasos.
+
+> Si abres la app desde otro puerto u origen, `localStorage` es distinto y
+> tendrás que pegar el token otra vez. Usa siempre el mismo origen, por
+> ejemplo `http://localhost:8000`.
 
 Sin token, la app intenta la URL pública de `raw.githubusercontent.com` y, si
 tampoco hay red, usa la cadena de respaldo:
@@ -50,8 +67,9 @@ El Ajustes también permite borrar las tasas guardadas.
   `__RATES_PAT__`.
 - El token se guarda en `localStorage`, nunca se registra en consola ni se
   envía a otro sitio que no sea `api.github.com`.
-- Si vas a publicar la app en abierto, lo correcto es hacer público
-  `tasas.json` o poner un intermediario que guarde el token en el servidor.
+- Si algún día publicas la app con el PAT inyectado en el HTML, cualquiera
+  podría leerlo. Para producción conviene hacer público `tasas.json` o usar un
+  intermediario que guarde el token en el servidor.
 
 ## Uso
 

@@ -1,7 +1,8 @@
 # Plan de implementación · Calculadora de Pago Móvil (BCV)
 
-Implementación local terminada el **12/11/2026**. Queda pendiente el paso 9:
-crear el repositorio en GitHub (se pide confirmación al final).
+Implementación terminada y publicada el **12/11/2026** en
+<https://github.com/linuxcoro/calculabcv>, **sin GitHub Pages** (se ejecuta
+localmente con el servidor de Python).
 
 ## 1. Objetivo
 
@@ -83,8 +84,9 @@ calculabcv/
   cambio a euro. Captura de pantalla revisada a 390×900.
 - [x] **Paso 8 · README y git local.**
   Commit inicial solo con los cuatro archivos del proyecto; **sin token**.
-- [ ] **Paso 9 · Crear el repositorio en GitHub.** ⛔ Requiere tu confirmación
-  (ver sección 9).
+- [x] **Paso 9 · Repositorio creado y código publicado.**
+  <https://github.com/linuxcoro/calculabcv> · sin GitHub Pages; el PAT se
+  configura en Ajustes (ver README).
 
 ## 5. Contrato de datos
 
@@ -156,7 +158,8 @@ layout final a 390×900.
 - [x] Token en Ajustes y soporte del marcador de despliegue; ningún secreto
       en el archivo (el marcador aparece una sola vez).
 - [x] Pruebas automatizadas en verde.
-- [ ] Repositorio creado y código publicado (paso 9).
+- [x] Repositorio creado y código publicado:
+      <https://github.com/linuxcoro/calculabcv>.
 
 ## 9. Seguridad
 
@@ -167,19 +170,27 @@ layout final a 390×900.
 - Si el PAT queda inyectado en un sitio público, cualquiera puede leerlo.
   Para producción conviene hacer público `tasas.json` o usar un intermediario.
 
-## 10. Paso 9 · Crear el repositorio en GitHub (pendiente)
+## 10. Paso 9 · Repositorio y PAT
 
-No se creó ningún repositorio ni se subió nada. Para cerrar el trabajo
-necesito que crees el repositorio y me confirmes:
+- [x] Repositorio público creado y `main` publicado:
+  <https://github.com/linuxcoro/calculabcv>.
+- [x] Sin GitHub Pages: la app se abre en local con `python3 -m http.server`.
+- [ ] PAT configurado en **Ajustes** de la app (lo pega el usuario).
 
-1. **Nombre y dueño** (sugerencia: `linuxcoro/calculabcv`).
-2. **Visibilidad**: público o privado.
-3. Si quieres **GitHub Pages** para abrirlo desde el móvil (repo público o
-   plan que lo permita, rama `main`, carpeta raíz).
-4. Si usarás **inyección del PAT** con GitHub Actions, agrega el secreto
-   `BCV_TASAS_PAT` en **ese** repositorio (los secretos no se comparten entre
-   repos), con `Contents: Read-only` sobre `linuxcoro/bcv_scraper`.
+### Crear el PAT (instrucciones)
 
-Después de eso ejecuto el push y, si aplica, configuro la publicación. En
-este equipo no hay `gh` ni credenciales git, así que el remoto se agrega con
-la URL del repositorio que me indiques.
+1. Entra a <https://github.com/settings/personal-access-tokens/new>.
+2. **Resource owner**: `linuxcoro`.
+3. **Repository access** → *Only select repositories* → `linuxcoro/bcv_scraper`.
+4. **Repository permissions → Contents: Read-only** (Metadata queda en lectura
+   automática; no hace falta nada más).
+5. **Generate token** y copia el valor `github_pat_…` (solo se muestra una vez).
+6. Abre la app (`python3 -m http.server 8000`), engranaje **Ajustes**, pega el
+   PAT en *Token de GitHub* y **Guardar**. Debe aparecer «Tasas BCV cargadas».
+
+> El secreto `BCV_TASAS_PAT` del repositorio **no se puede leer de vuelta**
+> desde GitHub; hay que usar el valor guardado o generar un PAT nuevo.
+> El token queda solo en el `localStorage` del navegador y nunca se commitea.
+
+Si cambias de puerto u origen, `localStorage` es otro y deberás pegarlo de
+nuevo; usa siempre el mismo (`http://localhost:8000`).
