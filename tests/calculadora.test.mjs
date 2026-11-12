@@ -129,6 +129,7 @@ test('guardas del archivo publicado', () => {
     assert.ok(!/(^|[^a-zA-Z0-9_])eval\s*\(/.test(html), 'No debe usarse eval');
     assert.ok(!/github_pat_[A-Za-z0-9_]{20,}/.test(html), 'No debe haber un PAT escrito en el archivo');
     assert.ok(html.includes('https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main'));
+    assert.ok(html.includes('https://raw.githubusercontent.com/linuxcoro/calculabcv/main/tasas.json'));
 
     const claves = [...html.matchAll(/data-key="([^"]+)"/g)].map((coincidencia) => coincidencia[1]);
     assert.deepEqual(claves, [

@@ -676,12 +676,13 @@ h2 {
 
         <div class="dialog-body">
             <div class="field">
-                <label for="campoToken">Token de GitHub (PAT)</label>
+                <label for="campoToken">Token de GitHub (PAT) · opcional</label>
                 <input id="campoToken" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
                 <p class="hint">
-                    Solo se guarda en este navegador. Debe ser un PAT <em>fine-grained</em> con
-                    permiso <em>Contents: Read-only</em> sobre <code>linuxcoro/bcv_scraper</code>.
-                    Sin token se usan las últimas tasas guardadas o las manuales.
+                    Solo se usa si la copia pública de <code>tasas.json</code> no está
+                    disponible. Se guarda en este navegador. Debe ser un PAT
+                    <em>fine-grained</em> con permiso <em>Contents: Read-only</em> sobre
+                    <code>linuxcoro/bcv_scraper</code>.
                 </p>
                 <p class="hint" id="estadoToken"></p>
             </div>
@@ -974,6 +975,9 @@ h2 {
 
     var RATES_URL = 'https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main';
     var RATES_RAW_URL = 'https://raw.githubusercontent.com/linuxcoro/bcv_scraper/main/tasas.json';
+    // Copia pública que publica el workflow de este repositorio. Se intenta
+    // primero: si existe, la app no necesita ningún PAT en el navegador.
+    var RATES_PUBLIC_URL = 'https://raw.githubusercontent.com/linuxcoro/calculabcv/main/tasas.json';
     var TIMEOUT_MS = 10000;
 
     var estado = {
@@ -1066,11 +1070,9 @@ h2 {
         return 'GitHub respondió con un error (' + status + ').';
     }
 
-    async function descargarTasas() {
-        var token = obtenerToken();
+    async function pedirTasas(url, token) {
         var headers = { 'Accept': 'application/vnd.github.raw' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        var url = token ? RATES_URL : RATES_RAW_URL;
 
         var control = new AbortController();
         var temporizador = setTimeout(function () { control.abort(); }, TIMEOUT_MS);
@@ -1102,6 +1104,32 @@ h2 {
             throw error;
         } finally {
             clearTimeout(temporizador);
+        }
+    }
+
+    async function descargarTasas() {
+        // 1) Copia pública del propio repositorio (la publica el workflow).
+        try {
+            var publicas = await pedirTasas(RATES_PUBLIC_URL, null);
+            return { tasas: publicas, fuente: 'publico' };
+        } catch (error) {
+            // Todavía no hay copia publicada: se intenta la fuente privada.
+        }
+
+        var token = obtenerToken();
+
+        // 2) API de contenidos del repo privado con el PAT de Ajustes.
+        if (token) {
+            var privadas = await pedirTasas(RATES_URL, token);
+            return { tasas: privadas, fuente: 'pat' };
+        }
+
+        // 3) Último intento: raw del repo de tasas (solo si se hizo público).
+        try {
+            var respaldo = await pedirTasas(RATES_RAW_URL, null);
+            return { tasas: respaldo, fuente: 'raw' };
+        } catch (error) {
+            throw new Error('No hay tasas publicadas todavía. Ejecuta el workflow «Actualizar tasas BCV» o configura el PAT en Ajustes.');
         }
     }
 
@@ -1296,7 +1324,8 @@ h2 {
         el.txtActualizar.textContent = 'Actualizando…';
         setEstado('Consultando las tasas del BCV…', 'info');
 
-        descargarTasas().then(function (tasas) {
+        descargarTasas().then(function (resultado) {
+            var tasas = resultado.tasas;
             estado.tasas = tasas;
             estado.origen = 'remoto';
             guardarCache(tasas);
@@ -1334,7 +1363,7 @@ h2 {
         el.campoToken.value = token;
         el.estadoToken.textContent = token
             ? 'Token guardado en este navegador.'
-            : (Core.esTokenConfigurado(inyectado) ? 'Token inyectado en esta página.' : 'Sin token configurado.');
+            : (Core.esTokenConfigurado(inyectado) ? 'Token inyectado en esta página.' : 'Sin token configurado (se usará la copia pública).');
         el.campoUsd.value = Core.numeroPositivo(estado.manual.usd) === null ? '' : Core.formatearMonto(estado.manual.usd);
         el.campoEur.value = Core.numeroPositivo(estado.manual.eur) === null ? '' : Core.formatearMonto(estado.manual.eur);
         el.errorAjustes.textContent = '';

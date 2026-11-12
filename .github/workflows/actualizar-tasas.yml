@@ -1,0 +1,68 @@
+name: Actualizar tasas BCV
+
+on:
+  schedule:
+    # 20 minutos pasada cada hora: da tiempo a que bcv_scraper regenere su JSON.
+    - cron: '20 * * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/actualizar-tasas.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar-tasas
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    name: Publicar tasas.json
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Descargar tasas desde bcv_scraper
+        env:
+          BCV_TASAS_PAT: ${{ secrets.BCV_TASAS_PAT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BCV_TASAS_PAT:-}" ]; then
+            echo "::error::Falta el secreto BCV_TASAS_PAT en este repositorio."
+            exit 1
+          fi
+          codigo="$(curl -sS -o tasas.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${BCV_TASAS_PAT}" \
+            -H "Accept: application/vnd.github.raw" \
+            'https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main')"
+          echo "GitHub respondió HTTP ${codigo}"
+          if [ "${codigo}" != "200" ]; then
+            rm -f tasas.json
+            echo "::error::No se pudo leer tasas.json (HTTP ${codigo}). Revisa el PAT y su acceso a bcv_scraper."
+            exit 1
+          fi
+
+      - name: Validar el JSON
+        run: |
+          set -euo pipefail
+          if ! jq -e '(.usd | type) == "number" and (.eur | type) == "number" and .usd > 0 and .eur > 0' tasas.json > /dev/null; then
+            echo "::error::tasas.json no tiene tasas USD/EUR válidas."
+            exit 1
+          fi
+          jq -r '"Tasas válidas: USD=\(.usd) EUR=\(.eur)"' tasas.json
+
+      - name: Publicar si cambió
+        run: |
+          set -euo pipefail
+          git add tasas.json
+          if git diff --cached --quiet; then
+            echo "tasas.json no cambió; no se commitea."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: actualizar tasas BCV"
+          git push || { git pull --rebase && git push; }
