@@ -58,13 +58,15 @@ con el botón Actualizar.**
 ## Uso
 
 - El teclado de la app inserta en la posición del cursor.
-- `⌫` borra, `C` limpia (rojo), `=` recalcula (verde) y oculta el teclado del
-  móvil.
-- El resultado se muestra en `$/€` y debajo en bolívares
-  (`En bolívares: Bs …`) con la tasa BCV de la moneda elegida.
+- El resultado en `$/€` y la conversión a bolívares (`En bolívares: Bs …`) se
+  actualizan **mientras escribes**, sin pulsar `=`.
+- `⌫` borra, `C` limpia (rojo) y `=` confirma el cálculo (verde), muestra el
+  error si la expresión no es válida y oculta el teclado del móvil.
+- Las expresiones incompletas (`3+`, `(3+10`) no muestran error mientras se
+  escribe: el mensaje aparece al pulsar `=`.
 - Toca la tarjeta **Dólar** o **Euro** para cambiar la moneda y la tasa.
-- Con teclado físico: `Enter` calcula, `Esc` limpia; también se puede escribir
-  `*`, `/`, `-` y paréntesis directamente.
+- Con teclado físico los valores también se actualizan al escribir; `Enter`
+  confirma, `Esc` limpia y se puede usar `*`, `/`, `-` y paréntesis.
 
 ## Pruebas
 

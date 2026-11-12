@@ -486,13 +486,14 @@ h2 {
             enterkeyhint="done"
             placeholder="3+10-3"
             aria-describedby="ayudaExpresion">
-        <p id="ayudaExpresion" class="sr-only">Escribe una operación con números, coma decimal, paréntesis y los operadores más, menos, por y entre. Pulsa igual para calcular.</p>
+        <p id="ayudaExpresion" class="sr-only">Escribe una operación con números, coma decimal, paréntesis y los operadores más, menos, por y entre. El resultado se actualiza mientras escribes; pulsa igual para confirmar y ocultar el teclado.</p>
 
-        <div class="result" role="status" aria-live="polite">
+        <div class="result">
             <div class="result-main" id="resultado">—</div>
             <div class="result-bs" id="resultadoBs">En bolívares: Bs —</div>
             <div class="result-rate" id="resultadoTasa">Tasa BCV $ —</div>
         </div>
+        <p id="anuncioResultado" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
 
         <div class="keypad" role="group" aria-label="Teclado de la calculadora">
             <button type="button" class="key key-clear" data-key="clear" aria-label="Limpiar todo">C</button>
@@ -798,6 +799,8 @@ h2 {
 
     var el = {};
 
+    var temporizadorAnuncio = null;
+
     function $(id) { return document.getElementById(id); }
 
     function leer(clave) {
@@ -930,6 +933,7 @@ h2 {
             el.resultadoBs.textContent = 'En bolívares: Bs —';
             el.resultadoBs.classList.add('sin-tasa');
             el.resultadoTasa.textContent = 'Sin tasa BCV disponible';
+            programarAnuncio();
             return;
         }
 
@@ -939,6 +943,7 @@ h2 {
             ? ' · ' + estado.tasas.fecha_valor_texto
             : '';
         el.resultadoTasa.textContent = 'Tasa BCV ' + simbolo + ' ' + Core.formatearMonto(tasa) + fecha;
+        programarAnuncio();
     }
 
     function mostrarError(mensaje) {
@@ -948,10 +953,45 @@ h2 {
         el.resultadoBs.textContent = 'En bolívares: Bs —';
         el.resultadoBs.classList.add('sin-tasa');
         el.resultadoTasa.textContent = 'Tasa BCV ' + (estado.moneda === 'eur' ? '€' : '$') + ' —';
+        anunciarTexto(mensaje);
     }
 
-    function invalidarResultado() {
-        estado.ultimoValor = null;
+    function textoAnuncio() {
+        if (estado.ultimoValor === null) return '';
+        var moneda = estado.moneda === 'eur' ? 'euros' : 'dólares';
+        var texto = 'Resultado: ' + Core.formatearMonto(estado.ultimoValor) + ' ' + moneda + '.';
+        var tasa = tasaDe(estado.moneda);
+        var total = tasa === null ? null : Core.convertirABs(estado.ultimoValor, tasa);
+        return total === null
+            ? texto + ' Sin tasa BCV disponible.'
+            : texto + ' En bolívares: ' + Core.formatearMonto(total) + '.';
+    }
+
+    function anunciarTexto(texto) {
+        if (!el.anuncioResultado) return;
+        clearTimeout(temporizadorAnuncio);
+        temporizadorAnuncio = null;
+        el.anuncioResultado.textContent = texto;
+    }
+
+    function programarAnuncio() {
+        if (!el.anuncioResultado) return;
+        clearTimeout(temporizadorAnuncio);
+        temporizadorAnuncio = setTimeout(function () {
+            temporizadorAnuncio = null;
+            el.anuncioResultado.textContent = textoAnuncio();
+        }, 500);
+    }
+
+    function actualizarEnVivo() {
+        var texto = el.expresion.value;
+        if (texto.trim() === '') {
+            estado.ultimoValor = null;
+            pintarResultado();
+            return;
+        }
+        var resultado = Core.evaluarExpresion(texto);
+        estado.ultimoValor = resultado.ok ? resultado.valor : null;
         pintarResultado();
     }
 
@@ -989,7 +1029,7 @@ h2 {
         input.setRangeText(texto, inicio, fin, 'end');
         estado.caret = inicio + texto.length;
         try { input.setSelectionRange(estado.caret, estado.caret); } catch (error) { /* sin selección */ }
-        invalidarResultado();
+        actualizarEnVivo();
     }
 
     function insertar(texto) {
@@ -1012,7 +1052,7 @@ h2 {
         var fin = rango.fin;
         if (inicio === fin) {
             if (inicio === 0) {
-                invalidarResultado();
+                actualizarEnVivo();
                 return;
             }
             inicio--;
@@ -1024,7 +1064,7 @@ h2 {
         el.expresion.value = '';
         estado.caret = 0;
         try { el.expresion.setSelectionRange(0, 0); } catch (error) { /* sin selección */ }
-        invalidarResultado();
+        actualizarEnVivo();
     }
 
     function evaluar() {
@@ -1037,6 +1077,7 @@ h2 {
         estado.ultimoValor = resultado.valor;
         sincronizarCaret();
         pintarResultado();
+        anunciarTexto(textoAnuncio());
     }
 
     function manejarTecla(clave) {
@@ -1093,7 +1134,7 @@ h2 {
     function enlazarEventos() {
         el.expresion.addEventListener('input', function () {
             sincronizarCaret();
-            invalidarResultado();
+            actualizarEnVivo();
         });
         ['keyup', 'click', 'select', 'focus', 'blur', 'pointerup'].forEach(function (nombre) {
             el.expresion.addEventListener(nombre, sincronizarCaret);
@@ -1129,7 +1170,8 @@ h2 {
             expresion: $('expresion'),
             resultado: $('resultado'),
             resultadoBs: $('resultadoBs'),
-            resultadoTasa: $('resultadoTasa')
+            resultadoTasa: $('resultadoTasa'),
+            anuncioResultado: $('anuncioResultado')
         };
 
         estado.moneda = monedaValida(leer(STORAGE.moneda));

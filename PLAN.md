@@ -35,6 +35,9 @@ sin CDN ni dependencias) que:
   tasa; el resultado cambia de `$` a `€` y la línea de bolívares se recalcula.
 - **Tasa exacta**: la conversión usa el número exacto del JSON
   (`897.5383`, `1001.18602288`), no el valor redondeado que se muestra.
+- **Resultado en vivo**: el valor y la conversión a bolívares se recalculan en
+  cada edición (teclado en pantalla o físico); `=` solo confirma y oculta el
+  teclado. Las expresiones incompletas muestran `—` sin error en vivo.
 - **PAT fuera de la interfaz**: un secreto de GitHub no se puede leer desde una
   página web. El workflow `actualizar-tasas.yml` usa `BCV_TASAS_PAT` para
   publicar `tasas.json` en este repo; la app solo lee esa copia pública, sin
@@ -91,6 +94,10 @@ calculabcv/
   Workflow `.github/workflows/actualizar-tasas.yml` que usa el secreto
   `BCV_TASAS_PAT`, publica `tasas.json` cada hora y la app lee esa copia
   pública sin PAT. Primer run verificado en verde.
+- [x] **Paso 11 · Valores en vivo.**
+  `actualizarEnVivo()` recalcula resultado y bolívares en cada edición; `=`
+  conserva su función. Anuncio accesible con retardo de 500 ms. Verificado en
+  Chrome headless (18/18).
 
 ## 5. Contrato de datos
 
@@ -136,13 +143,15 @@ calculabcv/
 node --test tests/calculadora.test.mjs     # 7/7 OK
 ```
 
-Además, prueba real en Chrome headless con clics sobre el teclado, **sin PAT y
-sin caché**, contra la copia pública publicada por el workflow (14/14):
+Además, prueba real en Chrome headless con clics y teclado, **sin PAT y sin
+caché**, contra la copia pública (18/18):
 
-- Tasas visibles, estado verde, sin botón Ajustes, sin diálogo y sin campo de
-  token.
-- `3+10−3` → `= $ 10,00` y bolívares con la tasa BCV del día; `=` quita el
-  foco; inserción en cursor; `C`; euro; coma única y `⌫`.
+- En vivo: `3`+`0` → `30,00` y bolívares sin pulsar `=`; `+` → `—` sin error;
+  `5` → `35,00`; `=` conserva el valor y quita el foco; `C` limpia.
+- Teclado físico: `1,5` vía evento `input` → `1,50`; anuncio accesible a los
+  700 ms; cambio a euro recalcula símbolo, tasa y bolívares.
+- Inválido (`3+4a`) → `—` silencioso; `=` muestra el error en rojo.
+- Sin botón Ajustes, sin diálogo y sin campo de token.
 - Workflow run
   [#43241624437](https://github.com/linuxcoro/calculabcv/actions/runs/43241624437)
   en verde; `tasas.json` público verificado (USD 904,4485 / EUR 1003,49465523,
@@ -159,6 +168,10 @@ layout final a 390×900 con las tasas reales y sin Ajustes.
 - [x] Dígitos y coma en el cursor; `⌫` y `C` correctos; `=` recalcula y
       oculta el teclado.
 - [x] Resultado `$/€` y `En bolívares: Bs …` con la tasa BCV de la moneda.
+- [x] Resultado y bolívares se actualizan en vivo en cada edición, sin pulsar
+      `=`.
+- [x] `=` confirma, muestra errores y oculta el teclado; las incompletas no
+      muestran error en vivo.
 - [x] Tasas de USD/EUR con fecha valor, actualización y respaldo sin red.
 - [x] Interfaz sin Ajustes ni campos de token; ningún secreto en el archivo.
 - [x] `tasas.json` público actualizado por el workflow y leído por la app.
@@ -180,6 +193,7 @@ layout final a 390×900 con las tasas reales y sin Ajustes.
 - [x] Sin GitHub Pages: la app se abre en local con `python3 -m http.server`.
 - [x] Workflow horario publicando `tasas.json` con `secrets.BCV_TASAS_PAT`.
 - [x] Interfaz sin Ajustes, token ni tasas manuales.
+- [x] Valores en dólares/euros y bolívares en vivo mientras se escribe.
 
 ### Workflow
 
