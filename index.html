@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#070e1b" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Calculadora de Pago Móvil con tasas oficiales del BCV (dólar y euro) y conversión a bolívares.">
+<!-- Token inyectable en el despliegue; nunca se guarda en el repositorio. -->
+<meta name="bcv-tasas-pat" content="__RATES_PAT__">
+<title>Calculadora de Pago Móvil · Tasas BCV</title>
+<style>
+* { box-sizing: border-box; }
+
+:root {
+    color-scheme: light dark;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --bg: #eef2f7;
+    --bg-glow: #d8e5f4;
+    --card: #ffffff;
+    --card-2: #f8fafc;
+    --border: #dbe3ed;
+    --text: #0f172a;
+    --muted: #5b6b80;
+    --accent: #0369a1;
+    --accent-2: #0ea5e9;
+    --accent-soft: #e0f2fe;
+    --usd: #047857;
+    --usd-soft: #d1fae5;
+    --eur: #0369a1;
+    --eur-soft: #e0f2fe;
+    --danger: #b91c1c;
+    --success: #15803d;
+    --key: #ffffff;
+    --key-border: #d5deea;
+    --key-danger: #dc2626;
+    --key-danger-text: #ffffff;
+    --key-success: #16a34a;
+    --key-success-text: #ffffff;
+    --shadow: 0 18px 40px -24px rgba(15, 23, 42, .45);
+    --radius: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #070e1b;
+        --bg-glow: #0d1b31;
+        --card: #0f1a2c;
+        --card-2: #0b1526;
+        --border: #1e2d44;
+        --text: #e6edf7;
+        --muted: #93a4bb;
+        --accent: #7dd3fc;
+        --accent-2: #38bdf8;
+        --accent-soft: #0c2a40;
+        --usd: #34d399;
+        --usd-soft: #082f24;
+        --eur: #7dd3fc;
+        --eur-soft: #082a40;
+        --danger: #fca5a5;
+        --success: #4ade80;
+        --key: #142137;
+        --key-border: #24344d;
+        --key-danger: #b91c1c;
+        --key-danger-text: #ffffff;
+        --key-success: #15803d;
+        --key-success-text: #ffffff;
+        --shadow: 0 22px 50px -26px rgba(0, 0, 0, .9);
+    }
+}
+
+html, body { min-height: 100%; }
+
+body {
+    margin: 0;
+    padding: calc(14px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: center;
+    font-family: var(--font);
+    color: var(--text);
+    background:
+        radial-gradient(1100px 480px at 50% -12%, var(--bg-glow), transparent 62%),
+        var(--bg);
+    -webkit-text-size-adjust: 100%;
+}
+
+.app {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ---------- Encabezado ---------- */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 2px;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+
+.brand-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: .95rem;
+    letter-spacing: -.02em;
+    color: #fff;
+    background: linear-gradient(145deg, var(--accent-2), var(--accent));
+    box-shadow: var(--shadow);
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.06rem;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+}
+
+.topbar p {
+    margin: 3px 0 0;
+    font-size: .78rem;
+    color: var(--muted);
+}
+
+.icon-btn {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: transform .12s ease, border-color .12s ease;
+}
+.icon-btn:hover { border-color: var(--accent-2); }
+.icon-btn:active { transform: scale(.96); }
+.icon-btn:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+
+/* ---------- Paneles ---------- */
+.panel {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+
+.panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+h2 {
+    margin: 0;
+    font-size: .96rem;
+    letter-spacing: .01em;
+}
+
+.hint {
+    margin: 3px 0 0;
+    font-size: .74rem;
+    line-height: 1.4;
+    color: var(--muted);
+}
+
+.btn-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card-2);
+    color: var(--text);
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease;
+}
+.btn-refresh:hover { border-color: var(--accent-2); color: var(--accent); }
+.btn-refresh:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+.btn-refresh[disabled] { opacity: .6; cursor: progress; }
+.btn-refresh svg { width: 15px; height: 15px; }
+.btn-refresh[aria-busy="true"] svg { animation: girar .9s linear infinite; }
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ---------- Tarjetas de tasa ---------- */
+.rate-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.rate-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card-2);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.rate-card:hover { border-color: var(--accent-2); }
+.rate-card:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+.rate-usd { color: var(--usd); }
+.rate-eur { color: var(--eur); }
+.rate-card[aria-pressed="true"] {
+    border-color: currentColor;
+    box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.rate-top { display: flex; align-items: center; gap: 8px; color: var(--text); }
+
+.rate-symbol {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--usd-soft);
+    color: var(--usd);
+    font-size: .85rem;
+    font-weight: 800;
+}
+.rate-eur .rate-symbol { background: var(--eur-soft); color: var(--eur); }
+
+.rate-name {
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.rate-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+}
+
+.rate-meta {
+    font-size: .68rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Estado ---------- */
+.status {
+    margin: 10px 0 0;
+    min-height: 1.1em;
+    font-size: .76rem;
+    line-height: 1.4;
+    color: var(--muted);
+}
+.status:empty { display: none; }
+.status.ok { color: var(--success); }
+.status.warn { color: #b45309; }
+.status.error { color: var(--danger); }
+
+@media (prefers-color-scheme: dark) {
+    .status.warn { color: #fbbf24; }
+    .status.ok { color: var(--success); }
+}
+
+/* ---------- Calculadora ---------- */
+.calc { padding-bottom: 14px; }
+
+.expresion {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card-2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+    text-align: right;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.expresion::placeholder { color: var(--muted); opacity: .7; }
+.expresion:focus {
+    border-color: var(--accent-2);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, .22);
+}
+
+.result {
+    margin-top: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card-2);
+}
+
+.result-main {
+    min-height: 1.2em;
+    font-size: clamp(1.75rem, 7.4vw, 2.35rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    word-break: break-word;
+}
+.result-main.error {
+    font-size: .92rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: left;
+    color: var(--danger);
+}
+
+.result-bs {
+    margin-top: 6px;
+    text-align: right;
+    font-size: 1.02rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.result-bs.sin-tasa { color: var(--muted); font-weight: 500; }
+
+.result-rate {
+    margin-top: 3px;
+    text-align: right;
+    font-size: .72rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Teclado ---------- */
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.key {
+    height: 56px;
+    border: 1px solid var(--key-border);
+    border-radius: 14px;
+    background: var(--key);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.28rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .08s ease, filter .15s ease;
+}
+.key:hover { filter: brightness(1.04); }
+.key:active { transform: scale(.97); }
+.key:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+
+.key-op {
+    font-size: 1.35rem;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-color: transparent;
+}
+.key-paren { color: var(--muted); }
+.key-clear {
+    font-size: 1.1rem;
+    background: var(--key-danger);
+    border-color: transparent;
+    color: var(--key-danger-text);
+}
+.key-eq {
+    font-size: 1.35rem;
+    background: var(--key-success);
+    border-color: transparent;
+    color: var(--key-success-text);
+}
+
+/* ---------- Pie ---------- */
+.foot {
+    padding: 2px 8px 0;
+    text-align: center;
+    font-size: .68rem;
+    line-height: 1.45;
+    color: var(--muted);
+}
+
+/* ---------- Diálogo de ajustes ---------- */
+.dialog {
+    width: min(440px, calc(100vw - 28px));
+    padding: 0;
+    border: none;
+    border-radius: 20px;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .7);
+}
+.dialog::backdrop {
+    background: rgba(3, 10, 24, .62);
+    backdrop-filter: blur(2px);
+}
+
+.dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px 18px 6px;
+}
+.dialog-head h2 { font-size: 1rem; }
+.dialog-head .icon-btn { width: 36px; height: 36px; font-size: 1.3rem; }
+
+.dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px 18px 4px;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field label {
+    font-size: .73rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.field input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--card-2);
+    color: var(--text);
+    font: inherit;
+    font-size: .92rem;
+    outline: none;
+}
+.field input:focus {
+    border-color: var(--accent-2);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, .22);
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.dialog-body .hint code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--card-2);
+    font-family: var(--mono);
+    font-size: .72rem;
+}
+
+.dialog-error {
+    margin: 0;
+    min-height: 1em;
+    color: var(--danger);
+    font-size: .76rem;
+    font-weight: 600;
+}
+
+.dialog-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 18px calc(16px + env(safe-area-inset-bottom));
+}
+
+.btn-primary {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 11px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-size: .86rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+
+.btn-ghost {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-ghost:hover { color: var(--danger); border-color: var(--danger); }
+.btn-ghost:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 380px) {
+    .key { height: 50px; font-size: 1.15rem; }
+    .expresion { font-size: 1.25rem; }
+    .rate-value { font-size: 1.06rem; }
+}
+</style>
+</head>
+<body>
+<main class="app">
+
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-icon" aria-hidden="true">Bs</span>
+            <div>
+                <h1>Calculadora de Pago Móvil</h1>
+                <p>Tasas oficiales BCV · $ y €</p>
+            </div>
+        </div>
+        <button type="button" class="icon-btn" id="btnAjustes" aria-label="Abrir ajustes" title="Ajustes">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 7h9M18 7h2M4 17h2M11 17h9"/>
+                <circle cx="15.5" cy="7" r="2.2"/>
+                <circle cx="8.5" cy="17" r="2.2"/>
+            </svg>
+        </button>
+    </header>
+
+    <section class="panel" aria-labelledby="tituloTasas">
+        <div class="panel-head">
+            <div>
+                <h2 id="tituloTasas">Tasas BCV</h2>
+                <p class="hint">Dólar y euro · datos del repositorio bcv_scraper</p>
+            </div>
+            <button type="button" class="btn-refresh" id="btnActualizar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+                    <path d="M21 3v6h-6"/>
+                </svg>
+                <span id="txtActualizar">Actualizar</span>
+            </button>
+        </div>
+
+        <div class="rate-grid">
+            <button type="button" class="rate-card rate-usd" data-moneda="usd" aria-pressed="true" title="Usar la tasa del dólar en la calculadora">
+                <span class="rate-top">
+                    <span class="rate-symbol" aria-hidden="true">$</span>
+                    <span class="rate-name">Dólar</span>
+                </span>
+                <strong class="rate-value" id="tasaUsd">—</strong>
+                <span class="rate-meta" id="fechaUsd">Sin datos</span>
+            </button>
+
+            <button type="button" class="rate-card rate-eur" data-moneda="eur" aria-pressed="false" title="Usar la tasa del euro en la calculadora">
+                <span class="rate-top">
+                    <span class="rate-symbol" aria-hidden="true">€</span>
+                    <span class="rate-name">Euro</span>
+                </span>
+                <strong class="rate-value" id="tasaEur">—</strong>
+                <span class="rate-meta" id="fechaEur">Sin datos</span>
+            </button>
+        </div>
+
+        <p class="status" id="estadoTasas" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel calc" aria-labelledby="tituloCalc">
+        <h2 id="tituloCalc" class="sr-only">Calculadora de operaciones</h2>
+
+        <label class="sr-only" for="expresion">Operación a calcular</label>
+        <input
+            id="expresion"
+            class="expresion"
+            type="text"
+            inputmode="text"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            enterkeyhint="done"
+            placeholder="3+10-3"
+            aria-describedby="ayudaExpresion">
+        <p id="ayudaExpresion" class="sr-only">Escribe una operación con números, coma decimal, paréntesis y los operadores más, menos, por y entre. Pulsa igual para calcular.</p>
+
+        <div class="result" role="status" aria-live="polite">
+            <div class="result-main" id="resultado">—</div>
+            <div class="result-bs" id="resultadoBs">En bolívares: Bs —</div>
+            <div class="result-rate" id="resultadoTasa">Tasa BCV $ —</div>
+        </div>
+
+        <div class="keypad" role="group" aria-label="Teclado de la calculadora">
+            <button type="button" class="key key-clear" data-key="clear" aria-label="Limpiar todo">C</button>
+            <button type="button" class="key" data-key="back" aria-label="Borrar un carácter">⌫</button>
+            <button type="button" class="key key-paren" data-key="(" aria-label="Abrir paréntesis">(</button>
+            <button type="button" class="key key-paren" data-key=")" aria-label="Cerrar paréntesis">)</button>
+
+            <button type="button" class="key" data-key="7">7</button>
+            <button type="button" class="key" data-key="8">8</button>
+            <button type="button" class="key" data-key="9">9</button>
+            <button type="button" class="key key-op" data-key="÷" aria-label="Dividir">÷</button>
+
+            <button type="button" class="key" data-key="4">4</button>
+            <button type="button" class="key" data-key="5">5</button>
+            <button type="button" class="key" data-key="6">6</button>
+            <button type="button" class="key key-op" data-key="×" aria-label="Multiplicar">×</button>
+
+            <button type="button" class="key" data-key="1">1</button>
+            <button type="button" class="key" data-key="2">2</button>
+            <button type="button" class="key" data-key="3">3</button>
+            <button type="button" class="key key-op" data-key="−" aria-label="Restar">−</button>
+
+            <button type="button" class="key" data-key="0">0</button>
+            <button type="button" class="key" data-key="," aria-label="Coma decimal">,</button>
+            <button type="button" class="key key-op" data-key="+" aria-label="Sumar">+</button>
+            <button type="button" class="key key-eq" data-key="=" aria-label="Calcular">=</button>
+        </div>
+    </section>
+
+    <footer class="foot">
+        Tasas oficiales del BCV · uso referencial. Sin datos personales. v1.0<br>
+        Conversión calculada con la tasa exacta publicada por el BCV.
+    </footer>
+</main>
+
+<dialog class="dialog" id="dlgAjustes" aria-labelledby="tituloAjustes">
+    <form id="formAjustes" novalidate>
+        <header class="dialog-head">
+            <h2 id="tituloAjustes">Ajustes</h2>
+            <button type="button" class="icon-btn" id="btnCerrarAjustes" aria-label="Cerrar ajustes">×</button>
+        </header>
+
+        <div class="dialog-body">
+            <div class="field">
+                <label for="campoToken">Token de GitHub (PAT)</label>
+                <input id="campoToken" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
+                <p class="hint">
+                    Solo se guarda en este navegador. Debe ser un PAT <em>fine-grained</em> con
+                    permiso <em>Contents: Read-only</em> sobre <code>linuxcoro/bcv_scraper</code>.
+                    Sin token se usan las últimas tasas guardadas o las manuales.
+                </p>
+                <p class="hint" id="estadoToken"></p>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="campoUsd">Tasa manual Bs/$</label>
+                    <input id="campoUsd" type="text" inputmode="decimal" autocomplete="off" placeholder="897,54">
+                </div>
+                <div class="field">
+                    <label for="campoEur">Tasa manual Bs/€</label>
+                    <input id="campoEur" type="text" inputmode="decimal" autocomplete="off" placeholder="1.001,19">
+                </div>
+            </div>
+            <p class="hint">Las tasas manuales solo se usan si no hay tasas del BCV disponibles.</p>
+
+            <p class="dialog-error" id="errorAjustes" role="alert"></p>
+        </div>
+
+        <footer class="dialog-foot">
+            <button type="button" class="btn-ghost" id="btnBorrarCache">Borrar tasas guardadas</button>
+            <button type="submit" class="btn-primary" id="btnGuardarAjustes">Guardar</button>
+        </footer>
+    </form>
+</dialog>
+
+<noscript>
+    <p style="text-align:center">Esta calculadora necesita JavaScript activado.</p>
+</noscript>
+
+<!-- Núcleo de cálculo puro (sin DOM), probado con node --test. -->
+<script id="calc-core">
+(function (global) {
+    'use strict';
+
+    var OPERADORES = {
+        '+': '+',
+        '-': '-',
+        '−': '-',
+        '×': '*',
+        '*': '*',
+        'x': '*',
+        'X': '*',
+        '÷': '/',
+        '/': '/',
+        ':': '/'
+    };
+
+    function numeroPositivo(valor) {
+        var n;
+        if (typeof valor === 'number') {
+            n = valor;
+        } else if (typeof valor === 'string') {
+            var t = valor.trim().replace(/\s/g, '');
+            if (!t) return null;
+            if (t.indexOf(',') !== -1 && t.indexOf('.') !== -1) {
+                t = t.replace(/\./g, '').replace(',', '.');
+            } else if (t.indexOf(',') !== -1) {
+                t = t.replace(',', '.');
+            }
+            n = Number(t);
+        } else {
+            return null;
+        }
+        return Number.isFinite(n) && n > 0 ? n : null;
+    }
+
+    function formatearMonto(numero) {
+        if (!Number.isFinite(numero)) return '—';
+        try {
+            return new Intl.NumberFormat('es-VE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(numero);
+        } catch (error) {
+            return formatearManual(numero);
+        }
+    }
+
+    function formatearManual(numero) {
+        var negativo = numero < 0;
+        var partes = Math.abs(numero).toFixed(2).split('.');
+        var entero = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return (negativo ? '-' : '') + entero + ',' + partes[1];
+    }
+
+    function formatearExacta(numero) {
+        if (!Number.isFinite(numero)) return '—';
+        var partes = numero.toFixed(8).split('.');
+        return partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + partes[1];
+    }
+
+    function textoOTasa(valor, respaldo, decimales) {
+        if (typeof valor === 'string' && valor.trim() !== '') return valor.trim();
+        if (typeof valor === 'number' && Number.isFinite(valor) && valor > 0) {
+            return decimales === 8 ? formatearExacta(valor) : formatearMonto(valor);
+        }
+        return decimales === 8 ? formatearExacta(respaldo) : formatearMonto(respaldo);
+    }
+
+    function normalizarTasas(datos) {
+        if (!datos || typeof datos !== 'object') return null;
+        var usd = numeroPositivo(datos.usd);
+        var eur = numeroPositivo(datos.eur);
+        if (usd === null || eur === null) return null;
+        var fechaValor = typeof datos.fecha_valor === 'string' ? datos.fecha_valor : '';
+        return {
+            usd: usd,
+            eur: eur,
+            usd_bs: textoOTasa(datos.usd_bs, usd, 2),
+            eur_bs: textoOTasa(datos.eur_bs, eur, 2),
+            usd_exacta: textoOTasa(datos.usd_exacta, usd, 8),
+            eur_exacta: textoOTasa(datos.eur_exacta, eur, 8),
+            fecha_valor: fechaValor,
+            fecha_valor_texto: typeof datos.fecha_valor_texto === 'string' && datos.fecha_valor_texto
+                ? datos.fecha_valor_texto
+                : fechaValor,
+            fuente: typeof datos.fuente === 'string' ? datos.fuente : '',
+            actualizado_texto: typeof datos.actualizado_texto === 'string' ? datos.actualizado_texto : '',
+            obtenido_en: typeof datos.obtenido_en === 'string' ? datos.obtenido_en : ''
+        };
+    }
+
+    function convertirABs(monto, tasa) {
+        if (!Number.isFinite(monto)) return null;
+        var valorTasa = numeroPositivo(tasa);
+        if (valorTasa === null) return null;
+        var total = monto * valorTasa;
+        return Number.isFinite(total) ? total : null;
+    }
+
+    function esTokenConfigurado(token) {
+        if (typeof token !== 'string') return false;
+        var limpio = token.trim();
+        return limpio.length > 20 && limpio.slice(0, 2) !== '__';
+    }
+
+    function tokenizar(texto) {
+        var tokens = [];
+        var i = 0;
+        var largo = texto.length;
+
+        while (i < largo) {
+            var caracter = texto[i];
+
+            if (/\s/.test(caracter)) { i++; continue; }
+
+            if (caracter >= '0' && caracter <= '9') {
+                var inicio = i;
+                var separadores = 0;
+                while (i < largo && /[0-9.,]/.test(texto[i])) {
+                    if (texto[i] === ',' || texto[i] === '.') {
+                        separadores++;
+                        if (separadores > 1) {
+                            return { ok: false, error: 'Número con más de una coma decimal' };
+                        }
+                    }
+                    i++;
+                }
+                var crudo = texto.slice(inicio, i).replace(',', '.').replace(',', '.');
+                var numero = Number(crudo);
+                if (!Number.isFinite(numero)) return { ok: false, error: 'Número no válido' };
+                tokens.push({ tipo: 'num', valor: numero });
+                continue;
+            }
+
+            if (caracter === ',') return { ok: false, error: 'Coma decimal sin número' };
+            if (caracter === '(' || caracter === ')') {
+                tokens.push({ tipo: 'paren', valor: caracter });
+                i++;
+                continue;
+            }
+            if (Object.prototype.hasOwnProperty.call(OPERADORES, caracter)) {
+                tokens.push({ tipo: 'op', valor: OPERADORES[caracter] });
+                i++;
+                continue;
+            }
+            return { ok: false, error: 'Carácter no válido: ' + caracter };
+        }
+
+        return { ok: true, tokens: tokens };
+    }
+
+    function evaluarExpresion(texto) {
+        if (typeof texto !== 'string' || texto.trim() === '') {
+            return { ok: false, error: 'Escribe una operación' };
+        }
+
+        var analisis = tokenizar(texto.trim());
+        if (!analisis.ok) return analisis;
+
+        var tokens = analisis.tokens;
+        var pos = 0;
+
+        function actual() { return tokens[pos]; }
+
+        function lanzar(mensaje) { throw new Error(mensaje); }
+
+        function parseExpr() {
+            var valor = parseTerm();
+            while (pos < tokens.length && actual().tipo === 'op' &&
+                   (actual().valor === '+' || actual().valor === '-')) {
+                var operador = tokens[pos++].valor;
+                var derecho = parseTerm();
+                valor = operador === '+' ? valor + derecho : valor - derecho;
+            }
+            return valor;
+        }
+
+        function parseTerm() {
+            var valor = parseFactor();
+            while (pos < tokens.length && actual().tipo === 'op' &&
+                   (actual().valor === '*' || actual().valor === '/')) {
+                var operador = tokens[pos++].valor;
+                var derecho = parseFactor();
+                if (operador === '/' && derecho === 0) {
+                    lanzar('No se puede dividir entre 0');
+                }
+                valor = operador === '*' ? valor * derecho : valor / derecho;
+            }
+            return valor;
+        }
+
+        function parseFactor() {
+            var token = actual();
+            if (!token) lanzar('Expresión incompleta');
+
+            if (token.tipo === 'op' && (token.valor === '+' || token.valor === '-')) {
+                pos++;
+                var conSigno = parseFactor();
+                return token.valor === '-' ? -conSigno : conSigno;
+            }
+            if (token.tipo === 'num') {
+                pos++;
+                return token.valor;
+            }
+            if (token.tipo === 'paren' && token.valor === '(') {
+                pos++;
+                var interno = parseExpr();
+                if (!actual() || actual().tipo !== 'paren' || actual().valor !== ')') {
+                    lanzar('Paréntesis sin cerrar');
+                }
+                pos++;
+                return interno;
+            }
+            lanzar('Expresión incompleta');
+        }
+
+        try {
+            var resultado = parseExpr();
+            if (pos < tokens.length) {
+                if (tokens[pos].tipo === 'paren' && tokens[pos].valor === ')') {
+                    lanzar('Paréntesis sin abrir');
+                }
+                lanzar('Operador inesperado');
+            }
+            if (!Number.isFinite(resultado)) {
+                lanzar('El resultado es demasiado grande');
+            }
+            return { ok: true, valor: resultado };
+        } catch (error) {
+            return { ok: false, error: error.message || 'Operación no válida' };
+        }
+    }
+
+    global.CalculadoraCore = {
+        evaluarExpresion: evaluarExpresion,
+        formatearMonto: formatearMonto,
+        formatearExacta: formatearExacta,
+        normalizarTasas: normalizarTasas,
+        convertirABs: convertirABs,
+        numeroPositivo: numeroPositivo,
+        esTokenConfigurado: esTokenConfigurado
+    };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<script>
+(function () {
+    'use strict';
+
+    var Core = window.CalculadoraCore;
+
+    var STORAGE = {
+        tasas: 'calculabcv_tasas',
+        manual: 'calculabcv_tasas_manual',
+        moneda: 'calculabcv_moneda',
+        pat: 'calculabcv_pat'
+    };
+
+    var RATES_URL = 'https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main';
+    var RATES_RAW_URL = 'https://raw.githubusercontent.com/linuxcoro/bcv_scraper/main/tasas.json';
+    var TIMEOUT_MS = 10000;
+
+    var estado = {
+        tasas: null,
+        origen: null,
+        manual: { usd: null, eur: null },
+        moneda: 'usd',
+        ultimoValor: null,
+        caret: 0,
+        cargando: false
+    };
+
+    var el = {};
+
+    function $(id) { return document.getElementById(id); }
+
+    function leer(clave) {
+        try { return localStorage.getItem(clave); } catch (error) { return null; }
+    }
+
+    function guardar(clave, valor) {
+        try { localStorage.setItem(clave, valor); } catch (error) { /* sin almacenamiento */ }
+    }
+
+    function borrar(clave) {
+        try { localStorage.removeItem(clave); } catch (error) { /* sin almacenamiento */ }
+    }
+
+    function monedaValida(valor) {
+        return valor === 'eur' ? 'eur' : 'usd';
+    }
+
+    function leerMetaToken() {
+        var meta = document.querySelector('meta[name="bcv-tasas-pat"]');
+        return meta ? (meta.getAttribute('content') || '') : '';
+    }
+
+    function obtenerToken() {
+        var guardado = leer(STORAGE.pat);
+        if (Core.esTokenConfigurado(guardado)) return guardado.trim();
+        var inyectado = leerMetaToken();
+        if (Core.esTokenConfigurado(inyectado)) return inyectado.trim();
+        return '';
+    }
+
+    function leerManual() {
+        var crudo = leer(STORAGE.manual);
+        if (!crudo) return { usd: null, eur: null };
+        try {
+            var datos = JSON.parse(crudo);
+            return {
+                usd: Core.numeroPositivo(datos && datos.usd),
+                eur: Core.numeroPositivo(datos && datos.eur)
+            };
+        } catch (error) {
+            return { usd: null, eur: null };
+        }
+    }
+
+    function leerCache() {
+        var crudo = leer(STORAGE.tasas);
+        if (!crudo) return null;
+        try {
+            var datos = JSON.parse(crudo);
+            var tasas = Core.normalizarTasas(datos);
+            if (!tasas) return null;
+            if (datos && datos.guardado_en) tasas.guardado_en = datos.guardado_en;
+            return tasas;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function guardarCache(tasas) {
+        var copia = {};
+        Object.keys(tasas).forEach(function (clave) { copia[clave] = tasas[clave]; });
+        copia.guardado_en = new Date().toISOString();
+        guardar(STORAGE.tasas, JSON.stringify(copia));
+    }
+
+    function mensajeHttp(status, conToken) {
+        if (status === 401) return 'El token de GitHub no es válido o venció.';
+        if (status === 403) return 'El token no tiene permiso de lectura (Contents: Read-only).';
+        if (status === 404) {
+            return conToken
+                ? 'No se encontró tasas.json en el repositorio.'
+                : 'El repositorio de tasas no es público; activa el acceso con tu PAT en Ajustes.';
+        }
+        if (status === 429) return 'Demasiadas consultas a GitHub. Espera un momento.';
+        return 'GitHub respondió con un error (' + status + ').';
+    }
+
+    async function descargarTasas() {
+        var token = obtenerToken();
+        var headers = { 'Accept': 'application/vnd.github.raw' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        var url = token ? RATES_URL : RATES_RAW_URL;
+
+        var control = new AbortController();
+        var temporizador = setTimeout(function () { control.abort(); }, TIMEOUT_MS);
+
+        try {
+            var respuesta = await fetch(url, {
+                headers: headers,
+                cache: 'no-store',
+                credentials: 'omit',
+                signal: control.signal
+            });
+            if (!respuesta.ok) {
+                throw new Error(mensajeHttp(respuesta.status, Boolean(token)));
+            }
+            var datos = await respuesta.json();
+            var tasas = Core.normalizarTasas(datos);
+            if (!tasas) throw new Error('El archivo de tasas no tiene datos válidos de USD/EUR.');
+            return tasas;
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                throw new Error('La consulta tardó demasiado. Revisa tu conexión.');
+            }
+            if (error && error.name === 'SyntaxError') {
+                throw new Error('El archivo de tasas está dañado.');
+            }
+            if (error instanceof TypeError) {
+                throw new Error('Sin conexión a Internet.');
+            }
+            throw error;
+        } finally {
+            clearTimeout(temporizador);
+        }
+    }
+
+    function setEstado(texto, tipo) {
+        el.estadoTasas.textContent = texto || '';
+        el.estadoTasas.className = 'status' + (tipo ? ' ' + tipo : '');
+    }
+
+    function tasaDe(moneda) {
+        var tipo = monedaValida(moneda);
+        var tasa = null;
+        if (estado.tasas) tasa = Core.numeroPositivo(estado.tasas[tipo]);
+        if (tasa === null) tasa = Core.numeroPositivo(estado.manual[tipo]);
+        return tasa;
+    }
+
+    function valorTasaVisible(moneda) {
+        var tipo = monedaValida(moneda);
+        if (estado.tasas) {
+            var texto = estado.tasas[tipo + '_bs'];
+            if (typeof texto === 'string' && texto.trim() !== '') return texto;
+            var numero = Core.numeroPositivo(estado.tasas[tipo]);
+            return numero === null ? '—' : Core.formatearMonto(numero);
+        }
+        var manual = Core.numeroPositivo(estado.manual[tipo]);
+        return manual === null ? '—' : Core.formatearMonto(manual);
+    }
+
+    function pintarTasas() {
+        el.tasaUsd.textContent = valorTasaVisible('usd');
+        el.tasaEur.textContent = valorTasaVisible('eur');
+
+        if (estado.tasas) {
+            var fecha = estado.tasas.fecha_valor_texto || estado.tasas.fecha_valor || 'Sin fecha valor';
+            el.fechaUsd.textContent = fecha;
+            el.fechaEur.textContent = fecha;
+            el.tasaUsd.title = 'Tasa exacta: Bs ' + (estado.tasas.usd_exacta || Core.formatearExacta(estado.tasas.usd));
+            el.tasaEur.title = 'Tasa exacta: Bs ' + (estado.tasas.eur_exacta || Core.formatearExacta(estado.tasas.eur));
+        } else {
+            el.fechaUsd.textContent = Core.numeroPositivo(estado.manual.usd) === null ? 'Sin datos' : 'Tasa manual';
+            el.fechaEur.textContent = Core.numeroPositivo(estado.manual.eur) === null ? 'Sin datos' : 'Tasa manual';
+            el.tasaUsd.title = 'Tasa manual';
+            el.tasaEur.title = 'Tasa manual';
+        }
+
+        pintarResultado();
+    }
+
+    function pintarResultado() {
+        var simbolo = estado.moneda === 'eur' ? '€' : '$';
+        el.resultado.classList.remove('error');
+
+        if (estado.ultimoValor === null) {
+            el.resultado.textContent = '—';
+            el.resultadoBs.textContent = 'En bolívares: Bs —';
+            el.resultadoBs.classList.add('sin-tasa');
+            el.resultadoTasa.textContent = 'Tasa BCV ' + simbolo + ' —';
+            return;
+        }
+
+        el.resultado.textContent = '= ' + simbolo + ' ' + Core.formatearMonto(estado.ultimoValor);
+
+        var tasa = tasaDe(estado.moneda);
+        var total = tasa === null ? null : Core.convertirABs(estado.ultimoValor, tasa);
+
+        if (total === null) {
+            el.resultadoBs.textContent = 'En bolívares: Bs —';
+            el.resultadoBs.classList.add('sin-tasa');
+            el.resultadoTasa.textContent = 'Configura la tasa BCV en Ajustes';
+            return;
+        }
+
+        el.resultadoBs.classList.remove('sin-tasa');
+        el.resultadoBs.textContent = 'En bolívares: Bs ' + Core.formatearMonto(total);
+        var etiqueta = estado.tasas ? 'Tasa BCV' : 'Tasa manual';
+        var fecha = estado.tasas && estado.tasas.fecha_valor_texto
+            ? ' · ' + estado.tasas.fecha_valor_texto
+            : '';
+        el.resultadoTasa.textContent = etiqueta + ' ' + simbolo + ' ' + Core.formatearMonto(tasa) + fecha;
+    }
+
+    function mostrarError(mensaje) {
+        estado.ultimoValor = null;
+        el.resultado.textContent = mensaje;
+        el.resultado.classList.add('error');
+        el.resultadoBs.textContent = 'En bolívares: Bs —';
+        el.resultadoBs.classList.add('sin-tasa');
+        el.resultadoTasa.textContent = 'Tasa BCV ' + (estado.moneda === 'eur' ? '€' : '$') + ' —';
+    }
+
+    function invalidarResultado() {
+        estado.ultimoValor = null;
+        pintarResultado();
+    }
+
+    function pintarMoneda() {
+        document.querySelectorAll('[data-moneda]').forEach(function (tarjeta) {
+            tarjeta.setAttribute('aria-pressed', tarjeta.getAttribute('data-moneda') === estado.moneda ? 'true' : 'false');
+        });
+        pintarResultado();
+    }
+
+    function seleccionarMoneda(moneda) {
+        estado.moneda = monedaValida(moneda);
+        guardar(STORAGE.moneda, estado.moneda);
+        pintarMoneda();
+    }
+
+    function sincronizarCaret() {
+        var input = el.expresion;
+        if (input.selectionStart !== null) {
+            estado.caret = input.selectionEnd !== null ? input.selectionEnd : input.selectionStart;
+        }
+    }
+
+    function rangoActual() {
+        var input = el.expresion;
+        if (document.activeElement === input && input.selectionStart !== null) {
+            return { inicio: input.selectionStart, fin: input.selectionEnd === null ? input.selectionStart : input.selectionEnd };
+        }
+        var punto = Math.min(estado.caret, input.value.length);
+        return { inicio: punto, fin: punto };
+    }
+
+    function escribir(texto, inicio, fin) {
+        var input = el.expresion;
+        input.setRangeText(texto, inicio, fin, 'end');
+        estado.caret = inicio + texto.length;
+        try { input.setSelectionRange(estado.caret, estado.caret); } catch (error) { /* sin selección */ }
+        invalidarResultado();
+    }
+
+    function insertar(texto) {
+        var rango = rangoActual();
+
+        if (texto === ',') {
+            var izquierda = el.expresion.value.slice(0, rango.inicio).match(/[0-9.,]*$/)[0];
+            var derecha = el.expresion.value.slice(rango.fin).match(/^[0-9.,]*/)[0];
+            var numero = izquierda + derecha;
+            if (numero.indexOf(',') !== -1 || numero.indexOf('.') !== -1) return;
+            if (izquierda === '') texto = '0,';
+        }
+
+        escribir(texto, rango.inicio, rango.fin);
+    }
+
+    function borrarCaracter() {
+        var rango = rangoActual();
+        var inicio = rango.inicio;
+        var fin = rango.fin;
+        if (inicio === fin) {
+            if (inicio === 0) {
+                invalidarResultado();
+                return;
+            }
+            inicio--;
+        }
+        escribir('', inicio, fin);
+    }
+
+    function limpiar() {
+        el.expresion.value = '';
+        estado.caret = 0;
+        try { el.expresion.setSelectionRange(0, 0); } catch (error) { /* sin selección */ }
+        invalidarResultado();
+    }
+
+    function evaluar() {
+        var resultado = Core.evaluarExpresion(el.expresion.value);
+        try { el.expresion.blur(); } catch (error) { /* sin foco */ }
+        if (!resultado.ok) {
+            mostrarError(resultado.error);
+            return;
+        }
+        estado.ultimoValor = resultado.valor;
+        sincronizarCaret();
+        pintarResultado();
+    }
+
+    function manejarTecla(clave) {
+        if (clave === '=') { evaluar(); return; }
+        if (clave === 'clear') { limpiar(); return; }
+        if (clave === 'back') { borrarCaracter(); return; }
+        insertar(clave);
+    }
+
+    function actualizarTasas() {
+        if (estado.cargando) return;
+        estado.cargando = true;
+        el.btnActualizar.disabled = true;
+        el.btnActualizar.setAttribute('aria-busy', 'true');
+        el.txtActualizar.textContent = 'Actualizando…';
+        setEstado('Consultando las tasas del BCV…', 'info');
+
+        descargarTasas().then(function (tasas) {
+            estado.tasas = tasas;
+            estado.origen = 'remoto';
+            guardarCache(tasas);
+            pintarTasas();
+            setEstado('Tasas BCV cargadas' + (tasas.actualizado_texto ? ' · ' + tasas.actualizado_texto : ''), 'ok');
+        }).catch(function (error) {
+            var cache = leerCache();
+            if (cache) {
+                estado.tasas = cache;
+                estado.origen = 'guardadas';
+                pintarTasas();
+                setEstado((error.message || 'No se pudieron cargar las tasas.') + ' Se muestran las últimas tasas guardadas.', 'warn');
+            } else if (estado.manual.usd || estado.manual.eur) {
+                estado.tasas = null;
+                estado.origen = 'manual';
+                pintarTasas();
+                setEstado((error.message || 'No se pudieron cargar las tasas.') + ' Usando tasa manual.', 'warn');
+            } else {
+                estado.tasas = null;
+                estado.origen = null;
+                pintarTasas();
+                setEstado((error.message || 'No se pudieron cargar las tasas.') + ' Abre Ajustes para configurar el acceso o escribe una tasa manual.', 'error');
+            }
+        }).finally(function () {
+            estado.cargando = false;
+            el.btnActualizar.disabled = false;
+            el.btnActualizar.removeAttribute('aria-busy');
+            el.txtActualizar.textContent = 'Actualizar';
+        });
+    }
+
+    function abrirAjustes() {
+        var token = leer(STORAGE.pat) || '';
+        var inyectado = leerMetaToken();
+        el.campoToken.value = token;
+        el.estadoToken.textContent = token
+            ? 'Token guardado en este navegador.'
+            : (Core.esTokenConfigurado(inyectado) ? 'Token inyectado en esta página.' : 'Sin token configurado.');
+        el.campoUsd.value = Core.numeroPositivo(estado.manual.usd) === null ? '' : Core.formatearMonto(estado.manual.usd);
+        el.campoEur.value = Core.numeroPositivo(estado.manual.eur) === null ? '' : Core.formatearMonto(estado.manual.eur);
+        el.errorAjustes.textContent = '';
+        if (typeof el.dlg.showModal === 'function') {
+            el.dlg.showModal();
+        } else {
+            el.dlg.setAttribute('open', '');
+        }
+    }
+
+    function guardarAjustes() {
+        var token = el.campoToken.value.trim();
+        if (token && !Core.esTokenConfigurado(token)) {
+            el.errorAjustes.textContent = 'El token parece incompleto (debe ser un PAT de GitHub).';
+            return;
+        }
+
+        var textoUsd = el.campoUsd.value.trim();
+        var textoEur = el.campoEur.value.trim();
+        var usd = textoUsd ? Core.numeroPositivo(textoUsd) : null;
+        var eur = textoEur ? Core.numeroPositivo(textoEur) : null;
+
+        if (textoUsd && usd === null) {
+            el.errorAjustes.textContent = 'La tasa manual del dólar no es válida.';
+            return;
+        }
+        if (textoEur && eur === null) {
+            el.errorAjustes.textContent = 'La tasa manual del euro no es válida.';
+            return;
+        }
+
+        if (token) guardar(STORAGE.pat, token);
+        else borrar(STORAGE.pat);
+
+        estado.manual = { usd: usd, eur: eur };
+        if (usd || eur) guardar(STORAGE.manual, JSON.stringify(estado.manual));
+        else borrar(STORAGE.manual);
+
+        el.dlg.close();
+        pintarTasas();
+        setEstado('Ajustes guardados. Consultando tasas…', 'info');
+        actualizarTasas();
+    }
+
+    function borrarTasasGuardadas() {
+        borrar(STORAGE.tasas);
+        if (estado.origen === 'guardadas') {
+            estado.tasas = null;
+            estado.origen = null;
+        }
+        pintarTasas();
+        setEstado('Se borraron las tasas guardadas en este navegador.', 'info');
+    }
+
+    function enlazarTeclado() {
+        document.querySelectorAll('.key[data-key]').forEach(function (boton) {
+            var tecla = boton.getAttribute('data-key');
+            boton.addEventListener('pointerdown', function (evento) { evento.preventDefault(); });
+            boton.addEventListener('mousedown', function (evento) { evento.preventDefault(); });
+            boton.addEventListener('click', function () { manejarTecla(tecla); });
+        });
+    }
+
+    function enlazarEventos() {
+        el.expresion.addEventListener('input', function () {
+            sincronizarCaret();
+            invalidarResultado();
+        });
+        ['keyup', 'click', 'select', 'focus', 'blur', 'pointerup'].forEach(function (nombre) {
+            el.expresion.addEventListener(nombre, sincronizarCaret);
+        });
+        el.expresion.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Enter') {
+                evento.preventDefault();
+                evaluar();
+            } else if (evento.key === 'Escape') {
+                evento.preventDefault();
+                limpiar();
+            }
+        });
+
+        document.querySelectorAll('[data-moneda]').forEach(function (tarjeta) {
+            tarjeta.addEventListener('click', function () {
+                seleccionarMoneda(tarjeta.getAttribute('data-moneda'));
+            });
+        });
+
+        el.btnActualizar.addEventListener('click', actualizarTasas);
+        el.btnAjustes.addEventListener('click', abrirAjustes);
+        el.btnCerrarAjustes.addEventListener('click', function () { el.dlg.close(); });
+        el.btnBorrarCache.addEventListener('click', borrarTasasGuardadas);
+        el.form.addEventListener('submit', function (evento) {
+            evento.preventDefault();
+            guardarAjustes();
+        });
+        el.dlg.addEventListener('click', function (evento) {
+            if (evento.target === el.dlg) el.dlg.close();
+        });
+    }
+
+    function init() {
+        el = {
+            estadoTasas: $('estadoTasas'),
+            tasaUsd: $('tasaUsd'),
+            tasaEur: $('tasaEur'),
+            fechaUsd: $('fechaUsd'),
+            fechaEur: $('fechaEur'),
+            btnActualizar: $('btnActualizar'),
+            txtActualizar: $('txtActualizar'),
+            expresion: $('expresion'),
+            resultado: $('resultado'),
+            resultadoBs: $('resultadoBs'),
+            resultadoTasa: $('resultadoTasa'),
+            btnAjustes: $('btnAjustes'),
+            dlg: $('dlgAjustes'),
+            form: $('formAjustes'),
+            campoToken: $('campoToken'),
+            estadoToken: $('estadoToken'),
+            campoUsd: $('campoUsd'),
+            campoEur: $('campoEur'),
+            errorAjustes: $('errorAjustes'),
+            btnBorrarCache: $('btnBorrarCache'),
+            btnCerrarAjustes: $('btnCerrarAjustes')
+        };
+
+        estado.moneda = monedaValida(leer(STORAGE.moneda));
+        estado.manual = leerManual();
+        estado.caret = el.expresion.value.length;
+
+        var cache = leerCache();
+        if (cache) {
+            estado.tasas = cache;
+            estado.origen = 'guardadas';
+        }
+
+        enlazarTeclado();
+        enlazarEventos();
+        pintarMoneda();
+        pintarTasas();
+
+        if (cache) setEstado('Mostrando las últimas tasas guardadas.', 'info');
+        document.documentElement.setAttribute('data-app', 'listo');
+
+        actualizarTasas();
+    }
+
+    init();
+})();
+</script>
+</body>
+</html>
