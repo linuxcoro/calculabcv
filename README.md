@@ -69,7 +69,7 @@ esa copia no está disponible, usa las últimas tasas guardadas en el navegador.
 Cadena de respaldo:
 
 **copia pública del repo → últimas tasas guardadas en `localStorage` → aviso
-con el botón Actualizar.**
+al recargar la página.**
 
 ## Seguridad
 
@@ -125,7 +125,7 @@ El workflow de este repositorio copia `tasas.json` desde `bcv_scraper` cada
 hora (minuto 20) y lo commitea si cambió. También se puede lanzar a mano en
 **Actions → Actualizar tasas BCV → Run workflow**.
 
-La app lo toma al recargar o al pulsar **Actualizar**. Si el workflow falla
+La app lo toma al recargar la página. Si el workflow falla
 (PAT vencido, sin acceso a `bcv_scraper` o permisos de escritura
 deshabilitados), se conserva la última copia buena y la app sigue funcionando
 con esa caché.

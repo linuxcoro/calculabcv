@@ -44,8 +44,10 @@ sin CDN ni dependencias) que:
   campos de token ni Ajustes.
 - **Sin ajustes en la interfaz**: se quitaron el botón y el diálogo de Ajustes
   junto con el campo de PAT, las tasas manuales y el borrado de caché.
+- **Interfaz mínima**: sin cabecera de marca ni encabezado de tasas; la
+  actualización de tasas ocurre al abrir/recargar (no hay botón Actualizar).
 - **Cadena de respaldo**: copia pública del repo → últimas tasas guardadas en
-  `localStorage` → aviso con el botón Actualizar.
+  `localStorage` → aviso (recargar la página para reintentar).
 - **Cálculo seguro**: parser recursivo propio; nunca `eval` ni `new Function`.
 
 ## 3. Estructura entregada
@@ -104,6 +106,10 @@ calculabcv/
   Workflow `.github/workflows/build-apk.yml` con Capacitor 8 que compila la
   app y publica `calculabcv-apk` como artefacto del run. Sin PAT ni secretos
   dentro del APK; los commits de `tasas.json` no disparan builds.
+- [x] **Paso 13 · Interfaz mínima.**
+  Se quitaron la cabecera (`Bs`, título, subtítulo), el encabezado «Tasas
+  BCV», el hint de `bcv_scraper` y el botón Actualizar; la sección conserva
+  `aria-label="Tasas BCV"`. Título de pestaña: `CalculaBCV`.
 
 ## 5. Contrato de datos
 
@@ -194,6 +200,8 @@ layout final a 390×900 con las tasas reales y sin Ajustes.
       `calculabcv-apk`.
 - [x] APK verificado: app dentro, paquete `com.linuxcoro.calculabcv` y permiso
       `INTERNET`; sin PAT ni secretos.
+- [x] Sin cabecera de marca, encabezado de tasas ni botón Actualizar; las
+      tarjetas y el cálculo en vivo siguen funcionando.
 
 ## 9. Seguridad
 
@@ -211,6 +219,7 @@ layout final a 390×900 con las tasas reales y sin Ajustes.
 - [x] Interfaz sin Ajustes, token ni tasas manuales.
 - [x] Valores en dólares/euros y bolívares en vivo mientras se escribe.
 - [x] APK de Android publicado como artefacto por `build-apk.yml`.
+- [x] Interfaz mínima sin cabecera ni botón Actualizar.
 
 ### Workflow
 

@@ -123,6 +123,12 @@ test('guardas del archivo publicado', () => {
     assert.ok(!html.includes('__RATES_PAT__'), 'No debe quedar el marcador del PAT');
     assert.ok(!html.includes('Ajustes'), 'No debe quedar la interfaz de Ajustes');
     assert.ok(!/Token de GitHub|PAT/.test(html), 'No debe quedar ninguna referencia al PAT en la interfaz');
+    assert.ok(!html.includes('<h1'), 'No debe quedar el título visible de la app');
+    assert.ok(!html.includes('class="topbar"'), 'No debe quedar la cabecera de marca');
+    assert.ok(!html.includes('id="btnActualizar"'), 'No debe quedar el botón Actualizar');
+    assert.ok(!html.includes('id="tituloTasas"'), 'No debe quedar el encabezado de tasas');
+    assert.ok(!html.includes('Dólar y euro · datos del repositorio bcv_scraper'), 'No debe quedar el hint de tasas');
+    assert.ok(!html.includes('>Actualizar<'), 'No debe quedar el texto Actualizar');
     assert.ok(!/new\s+Function/.test(html), 'No debe usarse new Function');
     assert.ok(!/(^|[^a-zA-Z0-9_])eval\s*\(/.test(html), 'No debe usarse eval');
     assert.ok(!/github_pat_[A-Za-z0-9_]{20,}/.test(html), 'No debe haber un PAT escrito en el archivo');
