@@ -35,22 +35,26 @@ sin CDN ni dependencias) que:
   tasa; el resultado cambia de `$` a `€` y la línea de bolívares se recalcula.
 - **Tasa exacta**: la conversión usa el número exacto del JSON
   (`897.5383`, `1001.18602288`), no el valor redondeado que se muestra.
-- **PAT fuera del repositorio**: una página web no puede leer secretos de
-  GitHub. El token entra por:
-  1. **Ajustes** de la app → `localStorage` del navegador (recomendado), o
-  2. el marcador `<meta name="bcv-tasas-pat" content="__RATES_PAT__">`
-     reemplazado al desplegar.
-- **Cadena de respaldo**: tasas de GitHub → últimas tasas guardadas → tasas
-  manuales de Ajustes → aviso para configurar el acceso.
+- **PAT fuera del navegador**: un secreto de GitHub no se puede leer desde una
+  página web. El workflow `actualizar-tasas.yml` usa `BCV_TASAS_PAT` para
+  publicar `tasas.json` en este repo; la app lee esa copia pública sin token.
+  El PAT en **Ajustes** (`localStorage`) queda como respaldo opcional, igual
+  que el marcador `<meta name="bcv-tasas-pat" content="__RATES_PAT__">` para
+  despliegues personales.
+- **Cadena de respaldo**: copia pública del repo → API de `bcv_scraper` con
+  PAT → últimas tasas guardadas → tasas manuales de Ajustes.
 - **Cálculo seguro**: parser recursivo propio; nunca `eval` ni `new Function`.
 
 ## 3. Estructura entregada
 
 ```text
 calculabcv/
+├── .github/workflows/
+│   └── actualizar-tasas.yml   # publica tasas.json cada hora
 ├── index.html                 # app completa (HTML + CSS + JS)
 ├── PLAN.md                    # este plan
 ├── README.md                  # uso, PAT, seguridad y pruebas
+├── tasas.json                 # copia pública (la genera el workflow)
 └── tests/
     └── calculadora.test.mjs   # pruebas con node --test
 ```
@@ -85,8 +89,11 @@ calculabcv/
 - [x] **Paso 8 · README y git local.**
   Commit inicial solo con los cuatro archivos del proyecto; **sin token**.
 - [x] **Paso 9 · Repositorio creado y código publicado.**
-  <https://github.com/linuxcoro/calculabcv> · sin GitHub Pages; el PAT se
-  configura en Ajustes (ver README).
+  <https://github.com/linuxcoro/calculabcv> · sin GitHub Pages.
+- [x] **Paso 10 · Actualización automática de tasas.**
+  Workflow `.github/workflows/actualizar-tasas.yml` que usa el secreto
+  `BCV_TASAS_PAT`, publica `tasas.json` cada hora y la app lee esa copia
+  pública sin PAT. Primer run verificado en verde.
 
 ## 5. Contrato de datos
 
@@ -133,18 +140,20 @@ calculabcv/
 node --test tests/calculadora.test.mjs     # 7/7 OK
 ```
 
-Además, prueba real en Chrome headless con clics sobre el teclado y tasas
-manuales sembradas:
+Además, prueba real en Chrome headless con clics sobre el teclado:
 
-- `3+10−3` → `= $ 10,00` y `En bolívares: Bs 8.975,40`.
-- `=` quita el foco del campo (oculta el teclado).
-- Inserción en el cursor: `3+10-3` con cursor tras `3` + `9` → `39+10-3`.
-- `C` limpia expresión y resultado.
-- Euro: `= € 10,00` y `Bs 10.011,90`.
-- Coma única por número y borrado con `⌫`.
+- Con tasas manuales: `3+10−3` → `= $ 10,00` y `En bolívares: Bs 8.975,40`;
+  `=` quita el foco; inserción en cursor; `C`; euro (`Bs 10.011,90`); coma
+  única y `⌫`.
+- **Sin PAT y sin caché**, contra la copia pública ya publicada por el
+  workflow: tasas visibles, estado verde, `3+10-3` → `= $ 10,00` y bolívares
+  con la tasa BCV del día. Workflow run
+  [#43241624437](https://github.com/linuxcoro/calculabcv/actions/runs/43241624437)
+  en verde; `tasas.json` público verificado (USD 904,4485 / EUR 1003,49465523,
+  fecha valor 12/11/2026).
 
 La captura revisada (`.preview.png`, solo verificación local) muestra el
-layout final a 390×900.
+layout final a 390×900 con las tasas reales.
 
 ## 8. Criterios de aceptación
 
@@ -155,42 +164,53 @@ layout final a 390×900.
       oculta el teclado.
 - [x] Resultado `$/€` y `En bolívares: Bs …` con la tasa BCV de la moneda.
 - [x] Tasas de USD/EUR con fecha valor, actualización y respaldo sin red.
-- [x] Token en Ajustes y soporte del marcador de despliegue; ningún secreto
-      en el archivo (el marcador aparece una sola vez).
+- [x] Token opcional en Ajustes y soporte del marcador de despliegue; ningún
+      secreto en el archivo (el marcador aparece una sola vez).
+- [x] `tasas.json` público actualizado por el workflow y leído por la app sin
+      PAT.
 - [x] Pruebas automatizadas en verde.
 - [x] Repositorio creado y código publicado:
       <https://github.com/linuxcoro/calculabcv>.
 
 ## 9. Seguridad
 
-- El PAT **no** se escribe en el repositorio ni en el HTML: solo el marcador
-  `__RATES_PAT__`.
-- Se guarda en `localStorage` del navegador y solo se envía a
+- El PAT **no** se escribe en el repositorio ni en el HTML: vive en el secreto
+  `BCV_TASAS_PAT` y solo lo usa el workflow.
+- El PAT opcional de Ajustes se guarda en `localStorage` y solo se envía a
   `api.github.com`.
-- Si el PAT queda inyectado en un sitio público, cualquiera puede leerlo.
-  Para producción conviene hacer público `tasas.json` o usar un intermediario.
+- La copia pública de `tasas.json` contiene solo tasas oficiales del BCV, sin
+  datos personales.
+- Si el PAT se inyectara en un sitio público, cualquiera podría leerlo; el
+  marcador `__RATES_PAT__` queda solo para despliegues personales.
 
-## 10. Paso 9 · Repositorio y PAT
+## 10. Estado final y PAT
 
-- [x] Repositorio público creado y `main` publicado:
-  <https://github.com/linuxcoro/calculabcv>.
+- [x] Repositorio público: <https://github.com/linuxcoro/calculabcv>.
 - [x] Sin GitHub Pages: la app se abre en local con `python3 -m http.server`.
-- [ ] PAT configurado en **Ajustes** de la app (lo pega el usuario).
+- [x] Workflow horario publicando `tasas.json` con `secrets.BCV_TASAS_PAT`.
+- [ ] PAT opcional en Ajustes: no es necesario con la copia pública.
 
-### Crear el PAT (instrucciones)
+### Workflow
 
-1. Entra a <https://github.com/settings/personal-access-tokens/new>.
-2. **Resource owner**: `linuxcoro`.
-3. **Repository access** → *Only select repositories* → `linuxcoro/bcv_scraper`.
-4. **Repository permissions → Contents: Read-only** (Metadata queda en lectura
-   automática; no hace falta nada más).
-5. **Generate token** y copia el valor `github_pat_…` (solo se muestra una vez).
-6. Abre la app (`python3 -m http.server 8000`), engranaje **Ajustes**, pega el
-   PAT en *Token de GitHub* y **Guardar**. Debe aparecer «Tasas BCV cargadas».
+`.github/workflows/actualizar-tasas.yml` corre a los 20 minutos de cada hora y
+también a mano desde **Actions → Actualizar tasas BCV → Run workflow**:
 
-> El secreto `BCV_TASAS_PAT` del repositorio **no se puede leer de vuelta**
-> desde GitHub; hay que usar el valor guardado o generar un PAT nuevo.
-> El token queda solo en el `localStorage` del navegador y nunca se commitea.
+1. Descarga `tasas.json` de `bcv_scraper` con el PAT del secreto.
+2. Valida que `usd` y `eur` sean números positivos.
+3. Commitea `tasas.json` solo si cambió.
 
-Si cambias de puerto u origen, `localStorage` es otro y deberás pegarlo de
-nuevo; usa siempre el mismo (`http://localhost:8000`).
+Requiere **Settings → Actions → General → Workflow permissions → Read and
+write** (en este repositorio el primer run ya funcionó).
+
+### PAT opcional
+
+Solo hace falta si la copia pública no está disponible:
+
+1. <https://github.com/settings/personal-access-tokens/new>
+2. Resource owner `linuxcoro`; acceso solo a `linuxcoro/bcv_scraper`.
+3. Permiso `Contents: Read-only`.
+4. Pegar en **Ajustes → Token de GitHub (PAT)**.
+
+El secreto `BCV_TASAS_PAT` no se puede leer de vuelta; si el workflow falla con
+401/404, genera un PAT nuevo y actualízalo en **Settings → Secrets and
+variables → Actions**.

@@ -21,55 +21,57 @@ navegadores.
 
 ## Tasas BCV
 
-La app descarga `tasas.json` del repositorio `linuxcoro/bcv_scraper` con la API
-de contenidos de GitHub:
+La app lee `tasas.json` **publicado en este mismo repositorio**:
 
 ```text
-https://api.github.com/repos/linuxcoro/bcv_scraper/contents/tasas.json?ref=main
+https://raw.githubusercontent.com/linuxcoro/calculabcv/main/tasas.json
 ```
 
-Como `linuxcoro/bcv_scraper` es **privado**, hace falta un PAT *fine-grained*
-con permiso **Contents: Read-only** sobre ese repositorio (el secreto
-`BCV_TASAS_PAT`). Una página web **no puede leer secretos de GitHub**, así que
-el token se pega una vez en **Ajustes** y queda guardado solo en el
-`localStorage` de ese navegador. Nunca se sube al repositorio.
+El workflow [`.github/workflows/actualizar-tasas.yml`](.github/workflows/actualizar-tasas.yml)
+copia ese archivo desde el repositorio privado `linuxcoro/bcv_scraper` usando
+el secreto `BCV_TASAS_PAT`, y lo commitea solo si cambió. Corre **cada hora**
+(minuto 20) y también a mano desde **Actions → Actualizar tasas BCV → Run
+workflow**.
 
-### Crear el PAT (pasos)
+Así la app **no necesita ningún PAT en el navegador**: el token vive en el
+secreto de GitHub y solo lo usa el workflow. La copia es pública porque el
+repositorio es público (las tasas del BCV son datos oficiales).
 
-1. Abre <https://github.com/settings/personal-access-tokens/new>.
-2. **Resource owner**: `linuxcoro`.
-3. **Repository access** → *Only select repositories* → `linuxcoro/bcv_scraper`.
-4. **Repository permissions → Contents: Read-only** (Metadata queda en lectura
-   automática; no hace falta nada más).
-5. **Generate token** y copia el valor `github_pat_…` (solo se muestra una vez).
-6. Abre la app con el servidor local, toca el engranaje **Ajustes**, pega el
-   token en *Token de GitHub (PAT)* y pulsa **Guardar**. El estado debe quedar
-   en verde: «Tasas BCV cargadas».
+### Requisito del workflow
 
-> El secreto `BCV_TASAS_PAT` del repositorio **no se puede leer de vuelta**
-> desde GitHub: hay que usar el valor guardado al crearlo o generar un PAT
-> nuevo con estos pasos.
+En **Settings → Actions → General → Workflow permissions** debe estar
+habilitado **Read and write permissions**, para que el workflow pueda commitear
+`tasas.json`. El workflow ya declara `permissions: contents: write`.
 
-> Si abres la app desde otro puerto u origen, `localStorage` es distinto y
-> tendrás que pegar el token otra vez. Usa siempre el mismo origen, por
-> ejemplo `http://localhost:8000`.
+### PAT opcional en la app
 
-Sin token, la app intenta la URL pública de `raw.githubusercontent.com` y, si
-tampoco hay red, usa la cadena de respaldo:
+Si la copia pública todavía no existe (por ejemplo antes del primer run del
+workflow), la app intenta la API de contenidos de `bcv_scraper` con el PAT de
+**Ajustes** y, si no hay, usa la caché o las tasas manuales.
 
-**tasas de GitHub → últimas tasas guardadas → tasas manuales de Ajustes.**
+Para configurarlo: engranaje **Ajustes** → pega un PAT *fine-grained* con
+**Contents: Read-only** sobre `linuxcoro/bcv_scraper` → **Guardar**. Se guarda
+solo en el `localStorage` de ese navegador. El secreto de GitHub no se puede
+leer de vuelta; si no tienes el valor, genera uno nuevo en
+<https://github.com/settings/personal-access-tokens/new>.
+
+Cadena de respaldo:
+
+**copia pública en este repo → API de `bcv_scraper` con PAT → últimas tasas
+guardadas → tasas manuales de Ajustes.**
 
 El Ajustes también permite borrar las tasas guardadas.
 
 ## Seguridad
 
-- No se escribe ningún PAT en el repositorio; el único marcador es
-  `__RATES_PAT__`.
-- El token se guarda en `localStorage`, nunca se registra en consola ni se
-  envía a otro sitio que no sea `api.github.com`.
-- Si algún día publicas la app con el PAT inyectado en el HTML, cualquiera
-  podría leerlo. Para producción conviene hacer público `tasas.json` o usar un
-  intermediario que guarde el token en el servidor.
+- La app no contiene ningún PAT y el repositorio tampoco: el token vive en el
+  secreto `BCV_TASAS_PAT` y solo lo usa GitHub Actions.
+- El PAT opcional de Ajustes se guarda en `localStorage`, nunca se registra en
+  consola ni se envía a otro sitio que no sea `api.github.com`.
+- La copia publicada de `tasas.json` es pública porque contiene solo las tasas
+  oficiales del BCV; no incluye datos personales.
+- El marcador `__RATES_PAT__` sigue disponible para inyección en despliegues
+  personales, pero no es necesario para el uso normal.
 
 ## Uso
 
@@ -96,15 +98,27 @@ guardas del archivo (sin `eval`, sin PAT, orden del teclado).
 
 ```text
 calculabcv/
-├── index.html                 # app completa (HTML + CSS + JS)
-├── PLAN.md                    # plan por pasos y criterios de aceptación
-├── README.md                  # este documento
+├── .github/
+│   └── workflows/
+│       └── actualizar-tasas.yml # publica tasas.json cada hora
+├── index.html                   # app completa (HTML + CSS + JS)
+├── PLAN.md                      # plan por pasos y criterios de aceptación
+├── README.md                    # este documento
+├── tasas.json                   # copia pública generada por el workflow
 └── tests/
-    └── calculadora.test.mjs   # pruebas con node --test
+    └── calculadora.test.mjs     # pruebas con node --test
 ```
 
 ## Actualización de tasas
 
-No hace falta que esta app actualice nada: el workflow del repositorio
-`bcv_scraper` regenera `tasas.json` cada hora en GitHub. Usa **Actualizar**
-para volver a consultarlo.
+El workflow de este repositorio copia `tasas.json` desde `bcv_scraper` cada
+hora (minuto 20) y lo commitea si cambió. También se puede lanzar a mano en
+**Actions → Actualizar tasas BCV → Run workflow**.
+
+La app lo toma al recargar o al pulsar **Actualizar**. Si el workflow falla
+(PAT vencido, sin acceso a `bcv_scraper` o permisos de escritura
+deshabilitados), se conserva la última copia buena y la app sigue funcionando
+con esa caché.
+
+Para diagnosticar el PAT, el workflow falla con HTTP `401`/`404` si el token no
+sirve o no tiene acceso al repositorio privado.
