@@ -18,14 +18,15 @@ sin CDN ni dependencias) que:
    [ 7 ] [ 8 ] [ 9 ] [ ÷ ]
    [ 4 ] [ 5 ] [ 6 ] [ × ]
    [ 1 ] [ 2 ] [ 3 ] [ − ]
-   [ 0 ] [ , ] [ + ] [ = ]
+   [ 0 ] [ , ] [ + ] [ % GAN ]
    ```
 
 3. Inserta dígitos `0-9` y la **coma decimal en la posición del cursor**;
-   `⌫` borra, `C` limpia (rojo), `=` recalcula (verde) y **oculta el teclado
-   del móvil**.
+   `⌫` borra, `C` limpia (rojo) y `% GAN` (verde) aplica o quita la ganancia
+   del porcentaje configurado con el **engranaje** del panel de tasas y
+   **oculta el teclado del móvil**.
 4. Muestra el resultado en `$/€` y debajo **`En bolívares: Bs …`** con la tasa
-   BCV de la moneda elegida.
+   BCV de la moneda elegida; con ganancia activa, recalcula ambos.
 
 ## 2. Decisiones de diseño
 
@@ -36,8 +37,15 @@ sin CDN ni dependencias) que:
 - **Tasa exacta**: la conversión usa el número exacto del JSON
   (`897.5383`, `1001.18602288`), no el valor redondeado que se muestra.
 - **Resultado en vivo**: el valor y la conversión a bolívares se recalculan en
-  cada edición (teclado en pantalla o físico); `=` solo confirma y oculta el
+  cada edición (teclado en pantalla o físico); `Enter` valida y oculta el
   teclado. Las expresiones incompletas muestran `—` sin error en vivo.
+- **Ganancia porcentual**: el **engranaje**, en la parte superior derecha del
+  panel de tasas (después de la tarjeta Euro), abre un popup modal para
+  configurar el porcentaje (30 % por defecto, 0–99,99) y lo guarda en
+  `calculabcv_ganancia` con **Guardar**; **Cancelar**, `Esc` o clic fuera lo
+  descartan. `% GAN` aplica o quita `monto ÷ (1 − %/100)`; con la ganancia
+  activa, guardar un nuevo porcentaje recalcula el resultado. Editar la
+  operación quita la ganancia.
 - **PAT fuera de la interfaz**: un secreto de GitHub no se puede leer desde una
   página web. El workflow `actualizar-tasas.yml` usa `BCV_TASAS_PAT` para
   publicar `tasas.json` en este repo; la app solo lee esa copia pública, sin
@@ -78,8 +86,8 @@ calculabcv/
   formato `es-VE`, normalización de tasas y conversión a bolívares.
 - [x] **Paso 4 · Teclado y UX.**
   Inserción en la posición del cursor conservando el foco, coma única por
-  número, `⌫`, `C`, `=` con `blur()` para ocultar el teclado móvil, `Enter`
-  y `Escape` en teclado físico, accesibilidad (`aria-live`, etiquetas).
+  número, `⌫`, `C`, `% GAN` con `blur()` para ocultar el teclado móvil,
+  `Enter` y `Escape` en teclado físico, accesibilidad (`aria-live`, etiquetas).
 - [x] **Paso 5 · Módulo de tasas BCV.**
   Descarga de la copia pública de `tasas.json` con timeout de 10 s y caché en
   `localStorage`; mensajes para 404, sin red y JSON inválido.
@@ -87,7 +95,7 @@ calculabcv/
   Claves `calculabcv_tasas` y `calculabcv_moneda`; sin diálogo de ajustes ni
   credenciales en la interfaz.
 - [x] **Paso 7 · Pruebas y verificación.**
-  `node --test tests/calculadora.test.mjs` (7/7) y prueba de interacción en
+  `node --test tests/calculadora.test.mjs` (8/8) y prueba de interacción en
   Chrome headless (11/11): cálculo, bolívares, foco, cursor, `C`, `⌫`, coma y
   cambio a euro. Captura de pantalla revisada a 390×900.
 - [x] **Paso 8 · README y git local.**
@@ -99,9 +107,9 @@ calculabcv/
   `BCV_TASAS_PAT`, publica `tasas.json` cada hora y la app lee esa copia
   pública sin PAT. Primer run verificado en verde.
 - [x] **Paso 11 · Valores en vivo.**
-  `actualizarEnVivo()` recalcula resultado y bolívares en cada edición; `=`
-  conserva su función. Anuncio accesible con retardo de 500 ms. Verificado en
-  Chrome headless (18/18).
+  `actualizarEnVivo()` recalcula resultado y bolívares en cada edición;
+  `Enter` conserva la validación. Anuncio accesible con retardo de 500 ms.
+  Verificado en Chrome headless (18/18).
 - [x] **Paso 12 · APK de Android.**
   Workflow `.github/workflows/build-apk.yml` con Capacitor 8 que compila la
   app y publica `calculabcv-apk` como artefacto del run. Sin PAT ni secretos
@@ -110,6 +118,17 @@ calculabcv/
   Se quitaron la cabecera (`Bs`, título, subtítulo), el encabezado «Tasas
   BCV», el hint de `bcv_scraper` y el botón Actualizar; la sección conserva
   `aria-label="Tasas BCV"`. Título de pestaña: `CalculaBCV`.
+- [x] **Paso 14 · Ganancia porcentual.**
+  Se reemplazó `=` por `% GAN` y se añadió un **engranaje** en la parte
+  superior derecha del panel de tasas, después de la tarjeta Euro. El
+  engranaje abre un **popup modal** con el porcentaje (30 % por defecto,
+  0–99,99) y los botones **Guardar**/**Cancelar**; el valor se persiste en
+  `calculabcv_ganancia`. El núcleo expone `normalizarPorcentaje`,
+  `formatearPorcentaje` y `aplicarGanancia` (`monto ÷ (1 − %/100)`). Con 30 %,
+  € 100 → € 142,86 y Bs 144.365,83 con la tasa EUR 1.010,5608. `% GAN`
+  aplica/quita la ganancia (toggle con `aria-pressed`); editar la operación
+  quita la ganancia. Validación 0–99,99 con aviso y `aria-invalid`. Verificado
+  con `node --test` (8/8) y Chrome headless (29/29).
 
 ## 5. Contrato de datos
 
@@ -146,28 +165,49 @@ calculabcv/
 | División entre 0 | «No se puede dividir entre 0». |
 | Coma repetida o inicial | Se ignora la segunda coma; `0,` automático. |
 | Cambio de moneda con resultado | Se recalcula la línea en bolívares. |
-| `=` con teclado móvil abierto | `blur()` oculta el teclado. |
-| `localStorage` bloqueado | La app funciona en memoria. |
+| `% GAN` con teclado móvil abierto | `blur()` oculta el teclado. |
+| `% GAN` sin resultado | «Escribe/Completa la operación para aplicar la ganancia»; no altera el campo. |
+| `% GAN` sobre ganancia activa | Vuelve al monto base (alterna con `aria-pressed`). |
+| Abrir configuración | El engranaje abre el popup, enfoca el porcentaje y `aria-expanded` pasa a `true`. |
+| Guardar / Cancelar / `Esc` / clic fuera | Guardar valida y persiste; Cancelar, `Esc` y el fondo cierran sin guardar y devuelven el foco al engranaje. |
+| Cambiar el porcentaje con ganancia activa | Al guardar, el resultado y los bolívares se recalculan con el nuevo porcentaje. |
+| Editar la operación con ganancia activa | La ganancia se quita y se muestra el nuevo base. |
+| Cambiar de moneda con ganancia activa | Se conserva la ganancia y se recalcula el Bs con la nueva tasa. |
+| Sin tasa BCV con ganancia | Muestra la ganancia en €/$ y `Bs —`. |
+| Porcentaje vacío, letras, negativo o ≥ 100 | Guardar mantiene el popup abierto con aviso e `aria-invalid`; no guarda. |
+| Porcentaje 0 | Resultado igual al monto base. |
+| `localStorage` bloqueado | La app funciona en memoria (30 % por defecto). |
 
 ## 7. Verificación ejecutada
 
 ```bash
-node --test tests/calculadora.test.mjs     # 7/7 OK
+node --test tests/calculadora.test.mjs     # 8/8 OK
 ```
 
 Además, prueba real en Chrome headless con clics y teclado, **sin PAT y sin
 caché**, contra la copia pública (18/18):
 
-- En vivo: `3`+`0` → `30,00` y bolívares sin pulsar `=`; `+` → `—` sin error;
-  `5` → `35,00`; `=` conserva el valor y quita el foco; `C` limpia.
+- En vivo: `3`+`0` → `30,00` y bolívares sin pulsar nada; `+` → `—` sin error;
+  `5` → `35,00`; `C` limpia.
 - Teclado físico: `1,5` vía evento `input` → `1,50`; anuncio accesible a los
   700 ms; cambio a euro recalcula símbolo, tasa y bolívares.
-- Inválido (`3+4a`) → `—` silencioso; `=` muestra el error en rojo.
+- Inválido (`3+4a`) → `—` silencioso; `Enter` muestra el error en rojo.
 - Sin botón Ajustes, sin diálogo y sin campo de token.
 - Workflow run
   [#43241624437](https://github.com/linuxcoro/calculabcv/actions/runs/43241624437)
   en verde; `tasas.json` público verificado (USD 904,4485 / EUR 1003,49465523,
   fecha valor 12/11/2026).
+
+La verificación de la ganancia en Chrome headless (29/29) comprobó, con tasas
+de prueba en caché y EUR 1.010,5608: el engranaje está después de la tarjeta
+Euro, alineado arriba y sin cortar las fechas; no quedan el panel ni el editor
+anteriores; abrir el engranaje muestra el popup modal con el input enfocado y
+el 30 % prellenado; `Guardar` cierra, persiste 35 % y devuelve el foco;
+`% GAN` aplica 35 % (`€ 153,85` / `Bs 155.470,89`) y alterna al base; con
+`100 %` el popup sigue abierto con aviso y `aria-invalid`; `Cancelar`, `Esc` y
+el clic en el fondo no guardan; `Enter` guarda 40 % (`€ 166,67` /
+`Bs 168.426,80`); editar la operación quita la ganancia; el porcentaje
+persiste al recargar; sin excepciones de JavaScript.
 
 Además, el workflow **Build APK** compila con Capacitor 8 y publica el
 artefacto `calculabcv-apk`: run
@@ -175,21 +215,37 @@ artefacto `calculabcv-apk`: run
 en verde (14/14 pasos), APK de 3,7 MB verificado (app dentro, paquete
 `com.linuxcoro.calculabcv` y permiso `INTERNET`, sin PAT).
 
-La captura revisada (`.preview.png`, solo verificación local) muestra el
-layout final a 390×900 con las tasas reales y sin Ajustes.
+La captura revisada (`.preview-ganancia.png`, solo verificación local) muestra
+el layout final a 390×900 con el popup abierto y el 40 % aplicado; la variante
+`.preview-ganancia-cerrada.png` muestra el engranaje en la tarjeta Euro.
 
 ## 8. Criterios de aceptación
 
 - [x] `index.html` autocontenido, sin CDN; abre con `python3 -m http.server`.
 - [x] Teclado exacto `C ⌫ ( )` / `7 8 9 ÷` / `4 5 6 ×` / `1 2 3 −` /
-      `0 , + =`, con `C` rojo y `=` verde, botones ≥ 48 px.
-- [x] Dígitos y coma en el cursor; `⌫` y `C` correctos; `=` recalcula y
-      oculta el teclado.
+      `0 , + % GAN`, con `C` rojo y `% GAN` verde, botones ≥ 48 px.
+- [x] Dígitos y coma en el cursor; `⌫` y `C` correctos; `% GAN` aplica la
+      ganancia y oculta el teclado.
 - [x] Resultado `$/€` y `En bolívares: Bs …` con la tasa BCV de la moneda.
-- [x] Resultado y bolívares se actualizan en vivo en cada edición, sin pulsar
+- [x] Resultado y bolívares se actualizan en vivo en cada edición, sin botón
       `=`.
-- [x] `=` confirma, muestra errores y oculta el teclado; las incompletas no
-      muestran error en vivo.
+- [x] `Enter` valida y muestra los errores; las incompletas no muestran error
+      en vivo.
+- [x] Engranaje en la parte superior derecha del panel de tasas, después de la
+      tarjeta Euro, alineado con su fila de rótulos y sin cortar las fechas.
+- [x] El engranaje abre un popup modal con el porcentaje (30 % por defecto,
+      0–99,99); **Guardar** lo persiste en `calculabcv_ganancia` y
+      **Cancelar**/`Esc`/clic fuera lo descartan.
+- [x] `% GAN` aplica/quita `monto ÷ (1 − %/100)` y mantiene `aria-pressed`
+      sincronizado; el engranaje se pinta en verde cuando está activa.
+- [x] Con 30 % y tasa EUR 1.010,5608: `€ 100` → `€ 142,86` / `Bs 144.365,83`;
+      la segunda pulsación vuelve al monto base.
+- [x] Guardar un nuevo porcentaje con la ganancia activa recalcula el
+      resultado.
+- [x] Editar la operación, cambiar de moneda y recargar tasas mantienen un
+      comportamiento coherente con la ganancia aplicada.
+- [x] Porcentaje inválido o `% GAN` sin resultado muestran un aviso claro y no
+      alteran el monto.
 - [x] Tasas de USD/EUR con fecha valor, actualización y respaldo sin red.
 - [x] Interfaz sin Ajustes ni campos de token; ningún secreto en el archivo.
 - [x] `tasas.json` público actualizado por el workflow y leído por la app.
@@ -218,6 +274,8 @@ layout final a 390×900 con las tasas reales y sin Ajustes.
 - [x] Workflow horario publicando `tasas.json` con `secrets.BCV_TASAS_PAT`.
 - [x] Interfaz sin Ajustes, token ni tasas manuales.
 - [x] Valores en dólares/euros y bolívares en vivo mientras se escribe.
+- [x] Ganancia porcentual con engranaje en la tarjeta Euro, popup modal y
+      `% GAN` como toggle.
 - [x] APK de Android publicado como artefacto por `build-apk.yml`.
 - [x] Interfaz mínima sin cabecera ni botón Actualizar.
 

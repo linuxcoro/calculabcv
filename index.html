@@ -112,6 +112,7 @@ h2 {
 
 /* ---------- Tarjetas de tasa ---------- */
 .rate-grid {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
@@ -266,6 +267,16 @@ h2 {
     font-variant-numeric: tabular-nums;
 }
 
+.result-ganancia {
+    margin-top: 3px;
+    text-align: right;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--success);
+    font-variant-numeric: tabular-nums;
+}
+.result-ganancia[hidden] { display: none; }
+
 /* ---------- Teclado ---------- */
 .keypad {
     display: grid;
@@ -307,12 +318,168 @@ h2 {
     border-color: transparent;
     color: var(--key-danger-text);
 }
-.key-eq {
-    font-size: 1.35rem;
+.key-gan {
+    font-size: .92rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    white-space: nowrap;
     background: var(--key-success);
     border-color: transparent;
     color: var(--key-success-text);
 }
+.key-gan[aria-pressed="true"] {
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .55);
+}
+
+/* ---------- Ganancia ---------- */
+.ganancia-gear {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card-2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.ganancia-gear:hover {
+    color: var(--text);
+    border-color: var(--accent-2);
+}
+.ganancia-gear:focus-visible {
+    outline: 3px solid var(--accent-2);
+    outline-offset: 2px;
+}
+.ganancia-gear.activa {
+    color: var(--success);
+    border-color: var(--success);
+}
+.ganancia-gear svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---------- Popup de ganancia ---------- */
+.dialogo-ganancia {
+    width: min(360px, calc(100vw - 32px));
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+}
+.dialogo-ganancia::backdrop {
+    background: rgba(2, 6, 23, .6);
+    backdrop-filter: blur(2px);
+}
+.dialogo-contenido {
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+.dialogo-titulo {
+    margin: 0;
+    font-size: 1.05rem;
+}
+.dialogo-detalle {
+    margin: 6px 0 0;
+    font-size: .78rem;
+    line-height: 1.4;
+    color: var(--muted);
+}
+.dialogo-campo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.dialogo-campo .ganancia-input {
+    flex: 1 1 auto;
+    width: auto;
+    height: 48px;
+    font-size: 1.15rem;
+}
+.dialogo-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+.boton {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font: inherit;
+    font-size: .86rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter .15s ease, border-color .15s ease;
+}
+.boton:hover { filter: brightness(1.04); }
+.boton:focus-visible {
+    outline: 3px solid var(--accent-2);
+    outline-offset: 2px;
+}
+.boton-primario {
+    background: var(--key-success);
+    border-color: transparent;
+    color: var(--key-success-text);
+}
+.boton-secundario {
+    background: var(--key);
+    color: var(--text);
+}
+
+.ganancia-input {
+    width: 76px;
+    height: 44px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--key);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.ganancia-input:focus {
+    border-color: var(--accent-2);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, .22);
+}
+.ganancia-input[aria-invalid="true"] {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.ganancia-sufijo {
+    font-size: .92rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.ganancia-error {
+    margin: 6px 2px 0;
+    font-size: .74rem;
+    line-height: 1.35;
+    color: var(--danger);
+}
+.ganancia-error[hidden] { display: none; }
 
 /* ---------- Pie ---------- */
 .foot {
@@ -337,8 +504,11 @@ h2 {
 
 @media (max-width: 380px) {
     .key { height: 50px; font-size: 1.15rem; }
+    .key-gan { font-size: .82rem; }
     .expresion { font-size: 1.25rem; }
     .rate-value { font-size: 1.06rem; }
+    .rate-meta { font-size: .64rem; }
+    .ganancia-gear { top: 0; width: 40px; height: 40px; }
 }
 </style>
 </head>
@@ -364,6 +534,16 @@ h2 {
                 <strong class="rate-value" id="tasaEur">—</strong>
                 <span class="rate-meta" id="fechaEur">Sin datos</span>
             </button>
+
+            <button type="button" class="ganancia-gear" id="botonGanancia"
+                    aria-haspopup="dialog" aria-controls="dialogoGanancia"
+                    aria-expanded="false" aria-label="Configurar ganancia (30 %)"
+                    title="Configurar ganancia">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button>
         </div>
 
         <p class="status" id="estadoTasas" role="status" aria-live="polite"></p>
@@ -384,11 +564,12 @@ h2 {
             enterkeyhint="done"
             placeholder="3+10-3"
             aria-describedby="ayudaExpresion">
-        <p id="ayudaExpresion" class="sr-only">Escribe una operación con números, coma decimal, paréntesis y los operadores más, menos, por y entre. El resultado se actualiza mientras escribes; pulsa igual para confirmar y ocultar el teclado.</p>
+        <p id="ayudaExpresion" class="sr-only">Escribe una operación con números, coma decimal, paréntesis y los operadores más, menos, por y entre. El resultado se actualiza mientras escribes. Con el teclado físico, Intro valida la expresión y oculta el teclado.</p>
 
         <div class="result">
             <div class="result-main" id="resultado">—</div>
             <div class="result-bs" id="resultadoBs">En bolívares: Bs —</div>
+            <div class="result-ganancia" id="resultadoGanancia" hidden></div>
             <div class="result-rate" id="resultadoTasa">Tasa BCV $ —</div>
         </div>
         <p id="anuncioResultado" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
@@ -417,7 +598,7 @@ h2 {
             <button type="button" class="key" data-key="0">0</button>
             <button type="button" class="key" data-key="," aria-label="Coma decimal">,</button>
             <button type="button" class="key key-op" data-key="+" aria-label="Sumar">+</button>
-            <button type="button" class="key key-eq" data-key="=" aria-label="Calcular">=</button>
+            <button type="button" class="key key-gan" id="teclaGanancia" data-key="ganancia" aria-pressed="false" aria-label="Aplicar ganancia del 30 %" title="Aplicar ganancia del 30 %">% GAN</button>
         </div>
     </section>
 
@@ -425,6 +606,36 @@ h2 {
         Tasas oficiales del BCV · uso referencial. Sin datos personales. v1.0<br>
         Conversión calculada con la tasa exacta publicada por el BCV.
     </footer>
+
+    <dialog id="dialogoGanancia" class="dialogo-ganancia"
+            aria-labelledby="tituloGanancia" aria-describedby="detalleGanancia">
+        <div class="dialogo-contenido">
+            <h2 id="tituloGanancia" class="dialogo-titulo">Ganancia</h2>
+            <p id="detalleGanancia" class="dialogo-detalle">Porcentaje entre 0 y 99,99. Se aplica con el botón % GAN.</p>
+            <label class="sr-only" for="ganancia">Porcentaje de ganancia</label>
+            <div class="dialogo-campo">
+                <input
+                    id="ganancia"
+                    class="ganancia-input"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    enterkeyhint="done"
+                    maxlength="5"
+                    value="30"
+                    pattern="[0-9]*[.,]?[0-9]*"
+                    aria-describedby="detalleGanancia errorGanancia">
+                <span class="ganancia-sufijo" aria-hidden="true">%</span>
+            </div>
+            <p id="errorGanancia" class="ganancia-error" role="status" aria-live="polite" hidden></p>
+            <div class="dialogo-acciones">
+                <button type="button" class="boton boton-secundario" id="cancelarGanancia">Cancelar</button>
+                <button type="button" class="boton boton-primario" id="guardarGanancia">Guardar</button>
+            </div>
+        </div>
+    </dialog>
 </main>
 
 <noscript>
@@ -449,7 +660,7 @@ h2 {
         ':': '/'
     };
 
-    function numeroPositivo(valor) {
+    function aNumero(valor) {
         var n;
         if (typeof valor === 'number') {
             n = valor;
@@ -465,7 +676,30 @@ h2 {
         } else {
             return null;
         }
-        return Number.isFinite(n) && n > 0 ? n : null;
+        return Number.isFinite(n) ? n : null;
+    }
+
+    function numeroPositivo(valor) {
+        var n = aNumero(valor);
+        return n !== null && n > 0 ? n : null;
+    }
+
+    function normalizarPorcentaje(valor) {
+        var n = aNumero(valor);
+        return n !== null && n >= 0 && n < 100 ? n : null;
+    }
+
+    function formatearPorcentaje(valor) {
+        var p = normalizarPorcentaje(valor);
+        return p === null ? '' : String(p).replace('.', ',');
+    }
+
+    function aplicarGanancia(monto, porcentaje) {
+        if (typeof monto !== 'number' || !Number.isFinite(monto)) return null;
+        var p = normalizarPorcentaje(porcentaje);
+        if (p === null) return null;
+        var total = monto / (1 - p / 100);
+        return Number.isFinite(total) ? total : null;
     }
 
     function formatearMonto(numero) {
@@ -666,7 +900,10 @@ h2 {
         formatearExacta: formatearExacta,
         normalizarTasas: normalizarTasas,
         convertirABs: convertirABs,
-        numeroPositivo: numeroPositivo
+        numeroPositivo: numeroPositivo,
+        normalizarPorcentaje: normalizarPorcentaje,
+        formatearPorcentaje: formatearPorcentaje,
+        aplicarGanancia: aplicarGanancia
     };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -679,7 +916,8 @@ h2 {
 
     var STORAGE = {
         tasas: 'calculabcv_tasas',
-        moneda: 'calculabcv_moneda'
+        moneda: 'calculabcv_moneda',
+        ganancia: 'calculabcv_ganancia'
     };
 
     // Copia pública del repositorio, actualizada por el workflow cada hora.
@@ -692,7 +930,9 @@ h2 {
         moneda: 'usd',
         ultimoValor: null,
         caret: 0,
-        cargando: false
+        cargando: false,
+        ganancia: 30,
+        conGanancia: false
     };
 
     var el = {};
@@ -810,11 +1050,58 @@ h2 {
         pintarResultado();
     }
 
+    function valorMostrado() {
+        if (estado.ultimoValor === null) return { valor: null, conGanancia: false };
+        if (!estado.conGanancia) return { valor: estado.ultimoValor, conGanancia: false };
+        var ganado = Core.aplicarGanancia(estado.ultimoValor, estado.ganancia);
+        if (ganado === null) return { valor: estado.ultimoValor, conGanancia: false };
+        return { valor: ganado, conGanancia: true };
+    }
+
+    function pintarBotonGanancia() {
+        if (!el.teclaGanancia) return;
+        var porcentaje = Core.formatearPorcentaje(estado.ganancia) || '30';
+        el.teclaGanancia.setAttribute('aria-pressed', estado.conGanancia ? 'true' : 'false');
+        el.teclaGanancia.setAttribute('aria-label',
+            (estado.conGanancia ? 'Quitar la ganancia del ' : 'Aplicar ganancia del ') + porcentaje + ' %');
+        el.teclaGanancia.title = estado.conGanancia
+            ? 'Quitar la ganancia'
+            : 'Aplicar ganancia del ' + porcentaje + ' %';
+    }
+
+    function pintarLineaGanancia(mostrado) {
+        if (!mostrado.conGanancia) {
+            el.resultadoGanancia.hidden = true;
+            el.resultadoGanancia.textContent = '';
+            return;
+        }
+        var simbolo = estado.moneda === 'eur' ? '€' : '$';
+        el.resultadoGanancia.hidden = false;
+        el.resultadoGanancia.textContent = 'Ganancia ' + Core.formatearPorcentaje(estado.ganancia)
+            + ' % · base ' + simbolo + ' ' + Core.formatearMonto(estado.ultimoValor);
+    }
+
+    function pintarConfigGanancia() {
+        if (!el.botonGanancia) return;
+        var porcentaje = Core.formatearPorcentaje(estado.ganancia) || '30';
+        el.botonGanancia.classList.toggle('activa', estado.conGanancia);
+        el.botonGanancia.setAttribute('aria-label',
+            'Configurar ganancia (' + porcentaje + ' %' + (estado.conGanancia ? ' aplicada' : '') + ')');
+        el.botonGanancia.title = 'Ganancia ' + porcentaje + ' %' + (estado.conGanancia ? ' aplicada' : '');
+    }
+
     function pintarResultado() {
         var simbolo = estado.moneda === 'eur' ? '€' : '$';
         el.resultado.classList.remove('error');
 
-        if (estado.ultimoValor === null) {
+        var mostrado = valorMostrado();
+        if (estado.conGanancia && !mostrado.conGanancia) estado.conGanancia = false;
+
+        pintarBotonGanancia();
+        pintarConfigGanancia();
+        pintarLineaGanancia(mostrado);
+
+        if (mostrado.valor === null) {
             el.resultado.textContent = '—';
             el.resultadoBs.textContent = 'En bolívares: Bs —';
             el.resultadoBs.classList.add('sin-tasa');
@@ -822,10 +1109,10 @@ h2 {
             return;
         }
 
-        el.resultado.textContent = '= ' + simbolo + ' ' + Core.formatearMonto(estado.ultimoValor);
+        el.resultado.textContent = '= ' + simbolo + ' ' + Core.formatearMonto(mostrado.valor);
 
         var tasa = tasaDe(estado.moneda);
-        var total = tasa === null ? null : Core.convertirABs(estado.ultimoValor, tasa);
+        var total = tasa === null ? null : Core.convertirABs(mostrado.valor, tasa);
 
         if (total === null) {
             el.resultadoBs.textContent = 'En bolívares: Bs —';
@@ -846,20 +1133,29 @@ h2 {
 
     function mostrarError(mensaje) {
         estado.ultimoValor = null;
+        estado.conGanancia = false;
         el.resultado.textContent = mensaje;
         el.resultado.classList.add('error');
         el.resultadoBs.textContent = 'En bolívares: Bs —';
         el.resultadoBs.classList.add('sin-tasa');
         el.resultadoTasa.textContent = 'Tasa BCV ' + (estado.moneda === 'eur' ? '€' : '$') + ' —';
+        pintarBotonGanancia();
+        pintarConfigGanancia();
+        el.resultadoGanancia.hidden = true;
+        el.resultadoGanancia.textContent = '';
         anunciarTexto(mensaje);
     }
 
     function textoAnuncio() {
         if (estado.ultimoValor === null) return '';
+        var mostrado = valorMostrado();
         var moneda = estado.moneda === 'eur' ? 'euros' : 'dólares';
-        var texto = 'Resultado: ' + Core.formatearMonto(estado.ultimoValor) + ' ' + moneda + '.';
+        var prefijo = mostrado.conGanancia
+            ? 'Resultado con ganancia del ' + Core.formatearPorcentaje(estado.ganancia) + ' %: '
+            : 'Resultado: ';
+        var texto = prefijo + Core.formatearMonto(mostrado.valor) + ' ' + moneda + '.';
         var tasa = tasaDe(estado.moneda);
-        var total = tasa === null ? null : Core.convertirABs(estado.ultimoValor, tasa);
+        var total = tasa === null ? null : Core.convertirABs(mostrado.valor, tasa);
         return total === null
             ? texto + ' Sin tasa BCV disponible.'
             : texto + ' En bolívares: ' + Core.formatearMonto(total) + '.';
@@ -882,6 +1178,7 @@ h2 {
     }
 
     function actualizarEnVivo() {
+        estado.conGanancia = false;
         var texto = el.expresion.value;
         if (texto.trim() === '') {
             estado.ultimoValor = null;
@@ -965,6 +1262,94 @@ h2 {
         actualizarEnVivo();
     }
 
+    function ocultarTeclado() {
+        try {
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+        } catch (error) { /* sin foco */ }
+    }
+
+    function mostrarErrorGanancia(mostrar) {
+        if (mostrar) {
+            el.errorGanancia.textContent = 'Usa un porcentaje de ganancia entre 0 y 99,99.';
+            el.errorGanancia.hidden = false;
+            el.ganancia.setAttribute('aria-invalid', 'true');
+        } else {
+            el.errorGanancia.textContent = '';
+            el.errorGanancia.hidden = true;
+            el.ganancia.removeAttribute('aria-invalid');
+        }
+    }
+
+    function abrirDialogoGanancia() {
+        if (el.dialogoGanancia.open) return;
+        el.ganancia.value = Core.formatearPorcentaje(estado.ganancia);
+        mostrarErrorGanancia(false);
+        el.dialogoGanancia.showModal();
+        el.botonGanancia.setAttribute('aria-expanded', 'true');
+        try {
+            el.ganancia.focus();
+            el.ganancia.select();
+        } catch (error) { /* sin selección */ }
+    }
+
+    function cerrarDialogoGanancia() {
+        el.botonGanancia.setAttribute('aria-expanded', 'false');
+        if (el.dialogoGanancia.open) el.dialogoGanancia.close();
+    }
+
+    function guardarGanancia() {
+        var porcentaje = Core.normalizarPorcentaje(el.ganancia.value);
+        if (porcentaje === null) {
+            mostrarErrorGanancia(true);
+            try {
+                el.ganancia.focus();
+                el.ganancia.select();
+            } catch (error) { /* sin selección */ }
+            return;
+        }
+
+        estado.ganancia = porcentaje;
+        guardar(STORAGE.ganancia, String(porcentaje));
+        el.ganancia.value = Core.formatearPorcentaje(porcentaje);
+        mostrarErrorGanancia(false);
+        cerrarDialogoGanancia();
+        if (estado.conGanancia) {
+            pintarResultado();
+            anunciarTexto(textoAnuncio());
+        } else {
+            pintarBotonGanancia();
+            pintarConfigGanancia();
+        }
+    }
+
+    function cancelarGanancia() {
+        cerrarDialogoGanancia();
+    }
+
+    function alternarGanancia() {
+        if (estado.conGanancia) {
+            estado.conGanancia = false;
+            ocultarTeclado();
+            pintarResultado();
+            anunciarTexto(textoAnuncio());
+            return;
+        }
+
+        if (estado.ultimoValor === null) {
+            mostrarError(el.expresion.value.trim() === ''
+                ? 'Escribe una operación para aplicar la ganancia'
+                : 'Completa la operación para aplicar la ganancia');
+            return;
+        }
+
+        estado.conGanancia = true;
+        ocultarTeclado();
+        pintarResultado();
+        anunciarTexto(textoAnuncio());
+    }
+
     function evaluar() {
         var resultado = Core.evaluarExpresion(el.expresion.value);
         try { el.expresion.blur(); } catch (error) { /* sin foco */ }
@@ -979,7 +1364,7 @@ h2 {
     }
 
     function manejarTecla(clave) {
-        if (clave === '=') { evaluar(); return; }
+        if (clave === 'ganancia') { alternarGanancia(); return; }
         if (clave === 'clear') { limpiar(); return; }
         if (clave === 'back') { borrarCaracter(); return; }
         insertar(clave);
@@ -1041,6 +1426,32 @@ h2 {
             }
         });
 
+        el.botonGanancia.addEventListener('click', abrirDialogoGanancia);
+        el.guardarGanancia.addEventListener('click', guardarGanancia);
+        el.cancelarGanancia.addEventListener('click', cancelarGanancia);
+        el.ganancia.addEventListener('input', function () {
+            mostrarErrorGanancia(false);
+        });
+        el.ganancia.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Enter') {
+                evento.preventDefault();
+                guardarGanancia();
+            }
+        });
+        el.dialogoGanancia.addEventListener('click', function (evento) {
+            if (evento.target === el.dialogoGanancia) cerrarDialogoGanancia();
+        });
+        el.dialogoGanancia.addEventListener('keydown', function (evento) {
+            if (evento.key === 'Escape') {
+                evento.preventDefault();
+                cerrarDialogoGanancia();
+            }
+        });
+        el.dialogoGanancia.addEventListener('close', function () {
+            el.botonGanancia.setAttribute('aria-expanded', 'false');
+            try { el.botonGanancia.focus(); } catch (error) { /* sin foco */ }
+        });
+
         document.querySelectorAll('[data-moneda]').forEach(function (tarjeta) {
             tarjeta.addEventListener('click', function () {
                 seleccionarMoneda(tarjeta.getAttribute('data-moneda'));
@@ -1058,12 +1469,24 @@ h2 {
             expresion: $('expresion'),
             resultado: $('resultado'),
             resultadoBs: $('resultadoBs'),
+            resultadoGanancia: $('resultadoGanancia'),
             resultadoTasa: $('resultadoTasa'),
-            anuncioResultado: $('anuncioResultado')
+            anuncioResultado: $('anuncioResultado'),
+            ganancia: $('ganancia'),
+            botonGanancia: $('botonGanancia'),
+            dialogoGanancia: $('dialogoGanancia'),
+            guardarGanancia: $('guardarGanancia'),
+            cancelarGanancia: $('cancelarGanancia'),
+            errorGanancia: $('errorGanancia'),
+            teclaGanancia: $('teclaGanancia')
         };
 
         estado.moneda = monedaValida(leer(STORAGE.moneda));
         estado.caret = el.expresion.value.length;
+
+        var porcentajeGuardado = Core.normalizarPorcentaje(leer(STORAGE.ganancia));
+        estado.ganancia = porcentajeGuardado === null ? 30 : porcentajeGuardado;
+        el.ganancia.value = Core.formatearPorcentaje(estado.ganancia);
 
         var cache = leerCache();
         if (cache) {

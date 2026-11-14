@@ -83,14 +83,24 @@ al recargar la página.**
 
 - El teclado de la app inserta en la posición del cursor.
 - El resultado en `$/€` y la conversión a bolívares (`En bolívares: Bs …`) se
-  actualizan **mientras escribes**, sin pulsar `=`.
-- `⌫` borra, `C` limpia (rojo) y `=` confirma el cálculo (verde), muestra el
-  error si la expresión no es válida y oculta el teclado del móvil.
+  actualizan **mientras escribes**; no hay botón `=`.
+- `⌫` borra y `C` limpia (rojo).
+- El engranaje **⚙**, en la parte superior derecha del panel de tasas (después
+  de la tarjeta Euro), abre un popup para configurar el porcentaje (30 % por
+  defecto). **Guardar** lo guarda en el dispositivo (`calculabcv_ganancia`);
+  **Cancelar**, `Esc` o un clic fuera lo descartan sin cambiar nada.
+- **`% GAN`** aplica o quita la ganancia con ese porcentaje:
+  `monto ÷ (1 − %/100)`. Con 30 %, `€ 100` pasa a `€ 142,86` y se recalcula su
+  equivalente en bolívares; una segunda pulsación vuelve al monto original.
+- Con la ganancia activa, guardar un nuevo porcentaje actualiza el resultado.
+- Editar la operación quita la ganancia aplicada; el porcentaje se conserva.
 - Las expresiones incompletas (`3+`, `(3+10`) no muestran error mientras se
-  escribe: el mensaje aparece al pulsar `=`.
-- Toca la tarjeta **Dólar** o **Euro** para cambiar la moneda y la tasa.
+  escribe: el mensaje aparece al pulsar `% GAN` o `Enter`.
+- Toca la tarjeta **Dólar** o **Euro** para cambiar la moneda y la tasa; si hay
+  ganancia aplicada, solo se recalcula la línea en bolívares.
 - Con teclado físico los valores también se actualizan al escribir; `Enter`
-  confirma, `Esc` limpia y se puede usar `*`, `/`, `-` y paréntesis.
+  valida y oculta el teclado, `Esc` limpia y se puede usar `*`, `/`, `-` y
+  paréntesis.
 
 ## Pruebas
 
@@ -99,8 +109,9 @@ node --test tests/calculadora.test.mjs
 ```
 
 Las pruebas extraen el núcleo de cálculo de `index.html` y validan
-operaciones, errores, formato `es-VE`, normalización de tasas, conversión y
-guardas del archivo (sin `eval`, sin PAT, orden del teclado).
+operaciones, errores, formato `es-VE`, normalización de tasas, conversión,
+ganancia porcentual y guardas del archivo (sin `eval`, sin PAT, orden del
+teclado con `% GAN`).
 
 ## Estructura
 

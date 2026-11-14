@@ -111,6 +111,39 @@ test('conversión a bolívares', () => {
     assert.equal(Core.convertirABs(NaN, 897), null);
 });
 
+test('ganancia porcentual', () => {
+    assert.equal(Core.normalizarPorcentaje('30,5'), 30.5);
+    assert.equal(Core.normalizarPorcentaje('99,99'), 99.99);
+    assert.equal(Core.normalizarPorcentaje(0), 0);
+    assert.equal(Core.normalizarPorcentaje('100'), null);
+    assert.equal(Core.normalizarPorcentaje('150'), null);
+    assert.equal(Core.normalizarPorcentaje('-5'), null);
+    assert.equal(Core.normalizarPorcentaje(''), null);
+    assert.equal(Core.normalizarPorcentaje('abc'), null);
+    assert.equal(Core.normalizarPorcentaje(null), null);
+
+    assert.equal(Core.formatearPorcentaje(30), '30');
+    assert.equal(Core.formatearPorcentaje(33.5), '33,5');
+    assert.equal(Core.formatearPorcentaje('100'), '');
+
+    assert.ok(Math.abs(Core.aplicarGanancia(100, 30) - 100 / 0.7) < 1e-9);
+    assert.equal(Core.formatearMonto(Core.aplicarGanancia(100, 30)), '142,86');
+    assert.equal(Core.formatearMonto(Core.aplicarGanancia(100, 35)), '153,85');
+    assert.equal(Core.aplicarGanancia(100, 0), 100);
+    assert.equal(Core.aplicarGanancia(0, 30), 0);
+    assert.equal(Core.aplicarGanancia(100, 100), null);
+    assert.equal(Core.aplicarGanancia(100, -5), null);
+    assert.equal(Core.aplicarGanancia(100, 'abc'), null);
+    assert.equal(Core.aplicarGanancia(NaN, 30), null);
+    assert.equal(Core.aplicarGanancia(Infinity, 30), null);
+
+    assert.equal(Core.formatearMonto(Core.convertirABs(100, 1010.5608)), '101.056,08');
+    assert.equal(
+        Core.formatearMonto(Core.convertirABs(Core.aplicarGanancia(100, 30), 1010.5608)),
+        '144.365,83'
+    );
+});
+
 test('lectura de números', () => {
     assert.equal(Core.numeroPositivo('897,54'), 897.54);
     assert.equal(Core.numeroPositivo('1.001,19'), 1001.19);
@@ -140,6 +173,39 @@ test('guardas del archivo publicado', () => {
         '7', '8', '9', '÷',
         '4', '5', '6', '×',
         '1', '2', '3', '−',
-        '0', ',', '+', '='
-    ], 'El teclado debe respetar el orden solicitado');
+        '0', ',', '+', 'ganancia'
+    ], 'El teclado debe respetar el orden solicitado con % GAN al final');
+
+    assert.ok(!html.includes('data-key="="'), 'El botón = ya no debe existir');
+    assert.ok(!html.includes('key-eq'), 'No debe quedar el estilo del botón =');
+    assert.ok(!html.includes('pulsa igual'), 'La ayuda no debe hablar del botón =');
+    assert.ok(html.includes('id="ganancia"'), 'Debe existir el campo de porcentaje de ganancia');
+    assert.ok(html.includes('id="resultadoGanancia"'), 'Debe existir la línea de ganancia del resultado');
+    assert.ok(html.includes('data-key="ganancia"'), 'Debe existir la tecla % GAN');
+    assert.match(html, /data-key="ganancia"[^>]*aria-pressed="false"/, 'La tecla % GAN debe ser un toggle con aria-pressed');
+
+    assert.ok(html.includes('id="botonGanancia"'), 'Debe existir el engranaje de ganancia');
+    assert.ok(html.includes('id="dialogoGanancia"'), 'Debe existir el popup de configuración de ganancia');
+    assert.ok(html.includes('id="guardarGanancia"'), 'Debe existir el botón Guardar del popup');
+    assert.ok(html.includes('id="cancelarGanancia"'), 'Debe existir el botón Cancelar del popup');
+    assert.ok(!html.includes('id="panelGanancia"'), 'No debe quedar el panel de ganancia anterior');
+    assert.ok(!html.includes('id="valorGanancia"'), 'No debe quedar el valor visible anterior');
+    assert.ok(!html.includes('id="editorGanancia"'), 'No debe quedar el editor plegable anterior');
+    assert.ok(!html.includes('ganancia-panel'), 'No debe quedar el panel a ancho completo');
+    assert.ok(!html.includes('ganancia-toggle'), 'No debe quedar el disparador anterior');
+    assert.ok(!html.includes('ganancia-dropdown'), 'No debe quedar el menú flotante anterior');
+    assert.ok(!html.includes('GANANCIA ▾'), 'El texto GANANCIA ▾ no debe quedar');
+    assert.ok(!html.includes('id="bloqueGanancia"'), 'No debe quedar la barra de ganancia anterior');
+    assert.ok(!html.includes('ganancia-barra'), 'No debe quedar el estilo de la barra anterior');
+
+    const posTasas = html.indexOf('aria-label="Tasas BCV"');
+    const posEuro = html.indexOf('data-moneda="eur"');
+    const posEngranaje = html.indexOf('id="botonGanancia"');
+    const posCalculadora = html.indexOf('aria-labelledby="tituloCalc"');
+    assert.ok(posTasas !== -1 && posEuro !== -1 && posEngranaje !== -1 && posCalculadora !== -1,
+        'Deben existir las tasas, el engranaje y la calculadora');
+    assert.ok(posTasas < posEuro && posEuro < posEngranaje && posEngranaje < posCalculadora,
+        'El engranaje debe ir después de la tarjeta Euro y antes de la calculadora');
+    assert.match(html, /id="botonGanancia"[^>]*aria-haspopup="dialog"/,
+        'El engranaje debe abrir un diálogo');
 });
